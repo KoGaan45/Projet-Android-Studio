@@ -8,8 +8,11 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -21,11 +24,34 @@ import com.google.android.gms.location.Priority
 class MainActivity : AppCompatActivity() {
 
     private val TAG = "MainActivity"
+    var fusedLocationProviderClient : FusedLocationProviderClient? = null
+    var lattitude : String? = null
+    var longitude : String? = null
+    var joueur : Joueur? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1);
+        }
+
+        if (ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED )
+        {
+            ActivityCompat.requestPermissions(this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1);
+        }
+
+        this.setUpLocationListener()
     }
 
     override fun onResume() {
@@ -43,8 +69,8 @@ class MainActivity : AppCompatActivity() {
         Thread {
             val ws = WebServiceConnexion()
             try{
-                val joueur: Joueur? = ws.call(login.text.toString(),password.text.toString())
-                Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature)
+                this.joueur = ws.call(login.text.toString(),password.text.toString())
+                creerNettoyeur()
             }
             catch(e : Exception)
             {
@@ -56,7 +82,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setUpLocationListener() {
 
-        val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         val builder = LocationRequest.Builder(1000)
         builder.setPriority(Priority.PRIORITY_HIGH_ACCURACY)
         val locationRequest = builder.build()
@@ -68,28 +94,48 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            fusedLocationProviderClient.requestLocationUpdates(
+            fusedLocationProviderClient!!.requestLocationUpdates(
                 locationRequest, object : LocationCallback() {
                     override fun onLocationResult(locationResult: LocationResult) {
                         super.onLocationResult(locationResult)
                         for (location in locationResult.locations) {
-                            var lattitude = location.latitude.toString()
-                            var longitude = location.longitude.toString()
+                            lattitude = location.latitude.toString()
+                            longitude = location.longitude.toString()
                         }
                     }
                 }, Looper.myLooper()
             )
         }
-
     }
 
-    /*fun creerNettoyeur(joueur : Joueur) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>,
+                                            grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            1 -> {
+                if (grantResults.isNotEmpty() && grantResults[0] ==
+                    PackageManager.PERMISSION_GRANTED) {
+                    if ((ContextCompat.checkSelfPermission(this@MainActivity,
+                            Manifest.permission.ACCESS_FINE_LOCATION) ===
+                                PackageManager.PERMISSION_GRANTED)) {
+                        Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                }
+                return
+            }
+        }
+    }
+
+    fun creerNettoyeur() {
         Thread {
             val ws = WebServiceCreationNettoyeur()
             try{
-
-                val joueur: Joueur? = ws.call(login.text.toString(),password.text.toString())
-                Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature)
+                Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+longitude + " | lattitude = "+lattitude)
+                //joueur!!.nettoyeur = ws.call(joueur!!.session, joueur!!.signature,longitude!!,lattitude!!)
+                joueur!!.nettoyeur = ws.call(joueur!!.session, joueur!!.signature,"1.93943","47.845560")
+                Log.d(TAG,"-----> "+joueur!!.nettoyeur)
             }
             catch(e : Exception)
             {
@@ -97,29 +143,5 @@ class MainActivity : AppCompatActivity() {
             }
         }.start()
         Log.d(TAG,"creationNettoyeur")
-    }*/
-
-    /*private fun raffraichirMission() {
-        Thread {
-            val ws = WebServiceLastMSG()
-            val aAjouter: ArrayList<Message> = ws.call()
-            try {
-                runOnUiThread {
-                    messagesFragment.deleteMessages()
-                    for (m in aAjouter) {
-                        messagesFragment.addMessage(
-                            m.getId(),
-                            m.getVraieDate(),
-                            m.getTitre(),
-                            m.getContenu()
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }.start()
-    }*/
-
-
+    }
 }

@@ -1,7 +1,6 @@
 package com.example.projetandroidstudio
 
 import android.util.Log
-import com.google.android.gms.location.LocationServices
 import org.w3c.dom.Document
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
@@ -17,7 +16,6 @@ import kotlin.experimental.and
 class WebServiceConnexion {
 
     private val TAG = "WSConnexion"
-
 
     fun getSha256Hash(password: String): String? {
         return try {
@@ -42,7 +40,6 @@ class WebServiceConnexion {
 
     fun call(login : String, password : String) : Joueur? {
         return try {
-            Log.d(TAG,getSha256Hash(password)!!)
             val url = URL("http://51.68.124.144/nettoyeurs_srv/connexion.php?login="+login+"&passwd="+getSha256Hash(password)!!)
             val cnx: URLConnection = url.openConnection()
             val `in`: InputStream = cnx.getInputStream()
@@ -58,7 +55,7 @@ class WebServiceConnexion {
             val nodeContent: Node = nl.item(0)
             val messagesXML: NodeList = nodeContent.getChildNodes()
             val session : Int = Integer.parseInt(messagesXML.item(0).textContent.toString())
-            val signature : Long = Integer.parseInt(messagesXML.item(1).textContent.toString()).toLong()
+            val signature : Long = java.lang.Long.parseLong(messagesXML.item(1).textContent.toString())
             return Joueur(session, signature, null)
         } catch (e: Exception) {
             e.printStackTrace()

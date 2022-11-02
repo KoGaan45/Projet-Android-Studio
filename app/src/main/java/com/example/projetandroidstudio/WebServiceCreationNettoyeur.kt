@@ -14,9 +14,10 @@ class WebServiceCreationNettoyeur {
 
     private val TAG = "WSCreationNettoyeur"
 
-    fun call(session : String, signature : String,lon : String, lat : String) : Joueur? {
+    fun call(session : Int, signature : Long,lon : String, lat : String) : String? {
         return try {
             val url = URL("http://51.68.124.144/nettoyeurs_srv/new_nettoyeur.php?session=$session&signature=$signature&lon=$lon&lat=$lat")
+            Log.d(TAG,"http://51.68.124.144/nettoyeurs_srv/new_nettoyeur.php?session=$session&signature=$signature&lon=$lon&lat=$lat")
             val cnx: URLConnection = url.openConnection()
             val `in`: InputStream = cnx.getInputStream()
             val dbf: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
@@ -30,7 +31,8 @@ class WebServiceCreationNettoyeur {
             nl = xml.getElementsByTagName("PARAMS")
             val nodeContent: Node = nl.item(0)
             val messagesXML: NodeList = nodeContent.getChildNodes()
-            return Joueur(Integer.parseInt(messagesXML.item(0).textContent.toString()))
+            Log.d(TAG,messagesXML.item(0).textContent.toString())
+            return messagesXML.item(0).textContent.toString()
         } catch (e: Exception) {
             e.printStackTrace()
             null
