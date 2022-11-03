@@ -1,6 +1,7 @@
 package com.example.projetandroidstudio
 
 import android.Manifest
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
@@ -132,7 +133,21 @@ class MainActivity : AppCompatActivity() {
             val ws = WebServiceConnexion()
             try{
                 this.joueur = ws.call(login.text.toString(),password.text.toString())
-                creerNettoyeur()
+                if(this.joueur != null) {
+                    creerNettoyeur()
+                    joueur!!.nettoyeur = "TEST A RETIRER"  // A ENLEVER QUAND LE WS EST DISPO PORU RECUP LE NOM
+                    if(joueur!!.nettoyeur != null){
+                        val intent = Intent(this,MainActivity2::class.java)
+                        startActivity(intent)
+                    }
+                    else{
+                        //  TODO : le joueur n'a pas de nettoyeur pas normal
+                    }
+                }
+                else{
+                    // TODO : créer notif connexion pas bonne
+                    Log.d(TAG,"Connexion échouée")
+                }
             }
             catch(e : Exception)
             {
