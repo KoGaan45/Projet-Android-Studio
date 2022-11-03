@@ -6,10 +6,8 @@ import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.view.View
-import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -24,10 +22,10 @@ import com.google.android.gms.location.Priority
 class MainActivity : AppCompatActivity() {
 
     private val TAG = "MainActivity"
-    var fusedLocationProviderClient : FusedLocationProviderClient? = null
+    private var fusedLocationProviderClient : FusedLocationProviderClient? = null
     var lattitude : String? = null
     var longitude : String? = null
-    var joueur : Joueur? = null
+    private var joueur : Joueur? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +37,7 @@ class MainActivity : AppCompatActivity() {
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1);
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
         }
 
         if (ActivityCompat.checkSelfPermission(
@@ -48,7 +46,7 @@ class MainActivity : AppCompatActivity() {
         ) != PackageManager.PERMISSION_GRANTED )
         {
             ActivityCompat.requestPermissions(this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1);
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
         }
 
         this.setUpLocationListener()
@@ -56,7 +54,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        //raffaichirMessages()
     }
 
     override fun onPause() {
@@ -74,7 +71,7 @@ class MainActivity : AppCompatActivity() {
             }
             catch(e : Exception)
             {
-                e.printStackTrace();
+                e.printStackTrace()
             }
         }.start()
         Log.d(TAG,"mBouttonConnecter")
@@ -128,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun creerNettoyeur() {
+    private fun creerNettoyeur() {
         Thread {
             val ws = WebServiceCreationNettoyeur()
             try{
@@ -139,7 +136,7 @@ class MainActivity : AppCompatActivity() {
             }
             catch(e : Exception)
             {
-                e.printStackTrace();
+                e.printStackTrace()
             }
         }.start()
         Log.d(TAG,"creationNettoyeur")
