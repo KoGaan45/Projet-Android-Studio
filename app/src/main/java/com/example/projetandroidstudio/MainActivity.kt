@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -64,6 +65,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         this.setUpLocationListener()
+
+        val btn = findViewById<Button>(R.id.button_test);
+
+        btn.setOnClickListener({
+            val intent = Intent(this,MainActivity2::class.java)
+            startActivity(intent)
+        })
     }
 
     override fun onResume() {

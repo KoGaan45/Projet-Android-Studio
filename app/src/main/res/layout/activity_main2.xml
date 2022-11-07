@@ -5,22 +5,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".MainActivity2">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="a faire !!!!"
-        android:textSize="24sp"
         android:layout_marginTop="10dp"
         android:layout_marginBottom="20dp"
-        />
+        android:gravity="center"
+        android:text="a faire !!!!"
+        android:textSize="24sp" />
 
-    <org.osmdroid.views.MapView
-        android:layout_height="match_parent"
-        android:layout_width="match_parent"
-        android:id="@+id/map"
-        />
+    <org.osmdroid.views.MapView android:id="@+id/map"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
 
 </LinearLayout>
