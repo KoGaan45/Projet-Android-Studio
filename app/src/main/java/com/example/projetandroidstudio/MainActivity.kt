@@ -76,14 +76,31 @@ class MainActivity : AppCompatActivity() {
         Thread {
             val ws = WebServiceConnexion()
             try{
+
                 this.joueur = ws.call(login.text.toString(),password.text.toString())
-                if(this.joueur != null) {
+
+                if(joueur == null) {
+                    this.runOnUiThread(Runnable {
+                        AlertDialog.Builder(this)
+                            .setMessage(R.string.dialog_connexion_invalide)
+                            .setPositiveButton(
+                                R.string.retour
+                            ) { _, _ ->
+                                onResume()
+                            }
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .show()
+                    })
+                    Log.d(TAG,"Connexion échouée")
+                }
+                else {
                     creerNettoyeur()
-                    joueur!!.nettoyeur = "TEST A RETIRER"  // A ENLEVER QUAND LE WS EST DISPO PORU RECUP LE NOM
-                    if(joueur!!.nettoyeur != null){
-                        val intent = Intent(this,MainActivity2::class.java)
-                        startActivity(intent)
+                    if(joueur!!.nettoyeur == null){
+                        val wsStats = WebServiceStatsNettoyeur()
+                        joueur = wsStats.call(joueur!!.session,joueur!!.signature)
                     }
+                    val intent = Intent(this,MainActivity2::class.java)
+                    startActivity(intent)
                 }
             }
             catch(e : Exception)
@@ -91,19 +108,6 @@ class MainActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
         }.start()
-
-        if(joueur == null) {
-            AlertDialog.Builder(this)
-                .setMessage(R.string.dialog_connexion_invalide)
-                .setPositiveButton(
-                    R.string.retour
-                ) { _, _ ->
-                    onResume()
-                }
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .show()
-            Log.d(TAG,"Connexion échouée")
-        }
 
         Log.d(TAG,"mBouttonConnecter")
     }
