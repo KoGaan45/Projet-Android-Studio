@@ -2,7 +2,6 @@ package com.example.projetandroidstudio
 
 import android.Manifest
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
@@ -12,39 +11,24 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
+import com.google.android.gms.location.*
 
 
+@Suppress("DEPRECATED_IDENTITY_EQUALS")
 class MainActivity : AppCompatActivity() {
 
     private val TAG = "MainActivity"
     private var fusedLocationProviderClient : FusedLocationProviderClient? = null
-    var lattitude : String? = null
-    var longitude : String? = null
     private var joueur : Joueur? = null
-    lateinit var mLastLocation: Location
     lateinit var mCurrentLocation: Location
-    lateinit var sharedPref: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        sharedPref = getPreferences(android.content.Context.MODE_PRIVATE) ?: return
-        mLastLocation = Location("DummyProvider")
-
-        mLastLocation.longitude = sharedPref.getString("last_longitude", "0.0")!!.toDouble()
-        mLastLocation.latitude = sharedPref.getString("last_latitude", "0.0")!!.toDouble()
-
-        Log.d(TAG,"-----> last_longitude: "+mLastLocation.longitude.toString())
 
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -66,77 +50,29 @@ class MainActivity : AppCompatActivity() {
 
         this.setUpLocationListener()
 
-        val btn = findViewById<Button>(R.id.button_test);
+        val btn = findViewById<Button>(R.id.boutton_test)
 
-        btn.setOnClickListener({
-            val intent = Intent(this,MainActivity2::class.java)
+        btn.setOnClickListener {
+            val intent = Intent(this, MainActivity2::class.java)
             startActivity(intent)
-        })
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        mLastLocation.longitude = sharedPref.getString("last_longitude", "0.0")!!.toDouble()
-        mLastLocation.latitude = sharedPref.getString("last_latitude", "0.0")!!.toDouble()
     }
 
     override fun onPause() {
         super.onPause()
-        saveLastPosition()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        saveLastPosition()
-    }
-
-    private fun saveLastPosition()
-    {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            fusedLocationProviderClient!!.lastLocation.addOnSuccessListener {
-                mCurrentLocation = it
-            }
-        }
-
-        with (sharedPref.edit()) {
-            putString("last_longitude", mCurrentLocation.longitude.toString())
-            putString("last_latitude", mCurrentLocation.latitude.toString())
-            apply()
-        }
-    }
-
-    fun calculVitesseJoueur(lastLocation: Location, currentLocation: Location)
-    {
-        var results = FloatArray(1)
-
-        Location.distanceBetween(lastLocation.latitude, lastLocation.longitude, currentLocation.latitude, currentLocation.longitude, results)
-
-        var kmPerHour = results[0] / 5 * 3600 / 1000
-
-        Log.d(TAG,"-----> distance: " + results[0].toString())
-        Log.d(TAG,"-----> km/h: " + kmPerHour.toString())
-
-        if (kmPerHour > 15.0)
-        {
-            // TODO Mettre en mode voyage après 1 minutes si supérieur à une vitesse définie
-            // Ne pas mettre à jour la dernière position connue du joueur
-        }
-        else
-        {
-            mLastLocation = mCurrentLocation
-        }
     }
 
     fun connecter(view : View) {
-        var login = findViewById<EditText>(R.id.editText);
-        var password = findViewById<EditText>(R.id.editText2);
+        val login = findViewById<EditText>(R.id.editText)
+        val password = findViewById<EditText>(R.id.editText2)
         Thread {
             val ws = WebServiceConnexion()
             try{
@@ -148,13 +84,6 @@ class MainActivity : AppCompatActivity() {
                         val intent = Intent(this,MainActivity2::class.java)
                         startActivity(intent)
                     }
-                    else{
-                        //  TODO : le joueur n'a pas de nettoyeur pas normal
-                    }
-                }
-                else{
-                    // TODO : créer notif connexion pas bonne
-                    Log.d(TAG,"Connexion échouée")
                 }
             }
             catch(e : Exception)
@@ -162,12 +91,24 @@ class MainActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
         }.start()
+
+        if(joueur == null) {
+            AlertDialog.Builder(this)
+                .setMessage(R.string.dialog_connexion_invalide)
+                .setPositiveButton(
+                    R.string.retour
+                ) { _, _ ->
+                    onResume()
+                }
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show()
+            Log.d(TAG,"Connexion échouée")
+        }
+
         Log.d(TAG,"mBouttonConnecter")
     }
 
     private fun setUpLocationListener() {
-        var timer = 0
-
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         val builder = LocationRequest.Builder(5000)
         builder.setPriority(Priority.PRIORITY_HIGH_ACCURACY)
@@ -186,14 +127,7 @@ class MainActivity : AppCompatActivity() {
                         super.onLocationResult(locationResult)
                         for (location in locationResult.locations) {
                             mCurrentLocation = location
-
-                            calculVitesseJoueur(mLastLocation, mCurrentLocation)
-
-                            timer += 5
-                            if (timer % 15 == 0)
-                            {
-                                //TODO Appel au webservice qui met à jour la position du joueur sur le serveur
-                            }
+                            Log.d(TAG,mCurrentLocation.longitude.toString())
                         }
                     }
                 }, Looper.myLooper()

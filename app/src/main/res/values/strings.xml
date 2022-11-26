@@ -6,4 +6,6 @@
     <string name="envoyer">Envoyer</string>
     <string name="name">Name</string>
     <string name="connexion">Sign in</string>
+    <string name="dialog_connexion_invalide">Identifiant / Mot de passe  incorrecte(s)</string>
+    <string name="retour">Retour</string>
 </resources>

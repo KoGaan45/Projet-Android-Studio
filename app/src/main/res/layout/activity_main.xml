@@ -66,17 +66,16 @@
         />
 
     <Button
-        android:id="@+id/button_test"
-        android:layout_width="130dp"
-        android:layout_height="70dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="120dp"
-        android:layout_marginTop="439dp"
-        android:layout_marginEnd="145dp"
-        android:layout_marginBottom="206dp"
-        android:text="Button" />
+        android:id="@+id/boutton_test"
+        android:layout_width="264dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_marginStart="70dp"
+        android:layout_marginLeft="196dp"
+        android:layout_marginTop="300dp"
+        android:layout_marginBottom="500dp"
+        android:layout_toEndOf="@+id/textview"
+        android:layout_toRightOf="@+id/textview"
+        android:text="DODGE" />
 
 </RelativeLayout>
