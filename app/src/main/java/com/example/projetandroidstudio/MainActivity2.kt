@@ -15,7 +15,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.preference.PreferenceManager
 import com.google.android.gms.location.*
-import org.osmdroid.config.Configuration
 import org.osmdroid.config.Configuration.*
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -32,11 +31,55 @@ class MainActivity2 : AppCompatActivity() {
     lateinit var sharedPref: SharedPreferences
     private var fusedLocationProviderClient : FusedLocationProviderClient? = null
     private var startPoint : GeoPoint = GeoPoint(47.845464, 1.939825)
+    private var modeJeu : Boolean = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        this.setUpLocationListener()
 
+        if (savedInstanceState == null) {
+            val extras = intent.extras
+            if (extras != null) {
+                mCurrentLocation = extras.get("mCurrentLocation") as Location
+            }
+        } else {
+            mCurrentLocation = savedInstanceState.getSerializable("mCurrentLocation") as Location
+        }
+        Log.d(TAG, "Location = $mCurrentLocation")
+
+        sharedPref = getPreferences(android.content.Context.MODE_PRIVATE) ?: return
+
+        this.setUpLocationListener()
+        this.checkPermissionForMap()
+        mLastLocation = mCurrentLocation
+        this.setUpMap()
+    }
+
+    private fun setUpMap() {
+        getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this))
+        setContentView(R.layout.activity_main2)
+
+        map = findViewById(R.id.map)
+        map.setTileSource(TileSourceFactory.MAPNIK)
+        map.setBuiltInZoomControls(true)
+
+        //Test si le  joueur est à la fac alors on centre sur lui sinon on centre 3IA avec erreur
+        checkPosition();
+
+        val mapController = map.controller
+        mapController.setZoom(19.0)
+        mapController.setCenter(startPoint)
+
+        map.isHorizontalMapRepetitionEnabled = false;
+        map.isVerticalMapRepetitionEnabled = false;
+
+        val rotationGestureOverlay = RotationGestureOverlay(map)
+        rotationGestureOverlay.isEnabled
+
+        map.setMultiTouchControls(true)
+        map.overlays.add(rotationGestureOverlay)
+    }
+
+    private fun checkPermissionForMap() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.READ_EXTERNAL_STORAGE
@@ -55,37 +98,6 @@ class MainActivity2 : AppCompatActivity() {
                 1
             )
         }
-
-        sharedPref = getPreferences(android.content.Context.MODE_PRIVATE) ?: return
-        mLastLocation = Location("DummyProvider")
-
-        mLastLocation.longitude = sharedPref.getString("last_longitude", "0.0")!!.toDouble()
-        mLastLocation.latitude = sharedPref.getString("last_latitude", "0.0")!!.toDouble()
-
-        Log.d(TAG,"-----> last_longitude: "+mLastLocation.longitude.toString())
-
-        getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this))
-        setContentView(R.layout.activity_main2)
-
-        map = findViewById(R.id.map)
-        map.setTileSource(TileSourceFactory.MAPNIK)
-        map.setBuiltInZoomControls(true)
-
-        //Test si le  joueur est à la fac alors on centre sur lui sinon on centre 3IA avec erreur
-        checkPosition();
-
-        val mapController = map.controller
-        mapController.setZoom(19.0)
-        mapController.setCenter(startPoint)
-
-        /**map.isHorizontalMapRepetitionEnabled = false;
-        map.isVerticalMapRepetitionEnabled = false;
-
-        val rotationGestureOverlay = RotationGestureOverlay(map)
-        rotationGestureOverlay.isEnabled
-
-        map.setMultiTouchControls(true)
-        map.overlays.add(rotationGestureOverlay)**/
     }
 
     private fun setUpLocationListener() {
@@ -108,6 +120,7 @@ class MainActivity2 : AppCompatActivity() {
                         for (location in locationResult.locations) {
                             mCurrentLocation = location
                         }
+                        setUpMap()
                     }
                 }, Looper.myLooper()
             )
@@ -121,11 +134,13 @@ class MainActivity2 : AppCompatActivity() {
             startPoint = GeoPoint(mCurrentLocation.latitude, mCurrentLocation.longitude)
             val textView : TextView = findViewById(R.id.textView)
             textView.text = "Déplacez-vous pour nettoyer des cibles !"
+            modeJeu=true
             true
         } else{
             val textView : TextView = findViewById(R.id.textView)
             textView.text = "Vous n'êtes pas dans l'arène, dirigez vous vers l'université !"
             textView.setTextColor(Color.parseColor("#FF0000"));
+            modeJeu=false
             false
         }
     }

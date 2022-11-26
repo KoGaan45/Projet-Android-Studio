@@ -94,12 +94,26 @@ class MainActivity : AppCompatActivity() {
                     Log.d(TAG,"Connexion échouée")
                 }
                 else {
-                    creerNettoyeur()
-                    if(joueur!!.nettoyeur == null){
-                        val wsStats = WebServiceStatsNettoyeur()
+                    creerNettoyeur() // Création du nettoyeur
+                    if(joueur!!.nettoyeur == null){ // S'il  est toujours  null c'est que le joueur n'est pas en 3IA ou que le jeu ne la pas récupérer
+                        val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
                         joueur = wsStats.call(joueur!!.session,joueur!!.signature)
+                        if(joueur!!.nettoyeur == null){ // Erreur se diriger vers 3IA
+                            this.runOnUiThread(Runnable {
+                                AlertDialog.Builder(this)
+                                    .setMessage(R.string.creation_nettoyeur_impossible)
+                                    .setPositiveButton(
+                                        R.string.OK
+                                    ) { _, _ ->
+                                        onResume()
+                                    }
+                                    .setIcon(android.R.drawable.ic_dialog_alert)
+                                    .show()
+                            })
+                        }
                     }
                     val intent = Intent(this,MainActivity2::class.java)
+                    intent.putExtra("mCurrentLocation",mCurrentLocation)
                     startActivity(intent)
                 }
             }
