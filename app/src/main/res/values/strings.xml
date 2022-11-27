@@ -10,4 +10,6 @@
     <string name="retour">Retour</string>
     <string name="creation_nettoyeur_impossible">Impossible de créer un nettoyeur ! Veuillez vous diriger vers le batîment 3IA</string>
     <string name="OK">OK</string>
+    <string name="nettoyer_cible">Déplacez-vous pour nettoyer des cibles !</string>
+    <string name="erreur_position">Vous n\'êtes pas dans l\'arène, dirigez vous vers l\'université !</string>
 </resources>

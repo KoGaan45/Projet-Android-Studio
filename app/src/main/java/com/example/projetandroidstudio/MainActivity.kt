@@ -114,6 +114,9 @@ class MainActivity : AppCompatActivity() {
                     }
                     val intent = Intent(this,MainActivity2::class.java)
                     intent.putExtra("mCurrentLocation",mCurrentLocation)
+                    intent.putExtra("session",joueur!!.session)
+                    intent.putExtra("signature",joueur!!.signature)
+                    intent.putExtra("nettoyeur",joueur!!.nettoyeur)
                     startActivity(intent)
                 }
             }
