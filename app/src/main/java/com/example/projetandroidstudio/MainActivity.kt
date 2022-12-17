@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.view.View
-import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -50,12 +49,14 @@ class MainActivity : AppCompatActivity() {
 
         this.setUpLocationListener()
 
+        /*
         val btn = findViewById<Button>(R.id.boutton_test)
 
         btn.setOnClickListener {
             val intent = Intent(this, MainActivity2::class.java)
             startActivity(intent)
         }
+        */
     }
 
     override fun onResume() {
@@ -71,8 +72,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun connecter(view : View) {
-        val login = findViewById<EditText>(R.id.editText)
-        val password = findViewById<EditText>(R.id.editText2)
+        val login = findViewById<EditText>(R.id.MainMenuLogin)
+        val password = findViewById<EditText>(R.id.MainMenuPassword)
         Thread {
             val ws = WebServiceConnexion()
             try{
@@ -95,7 +96,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 else {
                     creerNettoyeur() // Création du nettoyeur
-                    if(joueur!!.nettoyeur == null){ // S'il  est toujours  null c'est que le joueur n'est pas en 3IA ou que le jeu ne la pas récupérer
+                    if(joueur!!.nettoyeur == null){ // S'il est toujours null c'est que le joueur n'est pas en 3IA ou que le jeu ne la pas récupérer
                         val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
                         joueur = wsStats.call(joueur!!.session,joueur!!.signature)
                         if(joueur!!.nettoyeur == null){ // Erreur se diriger vers 3IA
@@ -112,11 +113,13 @@ class MainActivity : AppCompatActivity() {
                             })
                         }
                     }
+
+                    // Si tous les tests sont passés démarrer la seconde activité contenant le jeu
                     val intent = Intent(this,MainActivity2::class.java)
-                    intent.putExtra("mCurrentLocation",mCurrentLocation)
-                    intent.putExtra("session",joueur!!.session)
-                    intent.putExtra("signature",joueur!!.signature)
-                    intent.putExtra("nettoyeur",joueur!!.nettoyeur)
+                    intent.putExtra("mCurrentLocation", mCurrentLocation)
+                    intent.putExtra("session", joueur!!.session)
+                    intent.putExtra("signature", joueur!!.signature)
+                    intent.putExtra("nettoyeur", joueur!!.nettoyeur)
                     startActivity(intent)
                 }
             }
@@ -156,16 +159,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>,
-                                            grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             1 -> {
                 if (grantResults.isNotEmpty() && grantResults[0] ==
-                    PackageManager.PERMISSION_GRANTED) {
+                PackageManager.PERMISSION_GRANTED) {
                     if ((ContextCompat.checkSelfPermission(this@MainActivity,
-                            Manifest.permission.ACCESS_FINE_LOCATION) ===
-                                PackageManager.PERMISSION_GRANTED)) {
+                    Manifest.permission.ACCESS_FINE_LOCATION) ===
+                    PackageManager.PERMISSION_GRANTED)) {
                         Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
                     }
                 } else {

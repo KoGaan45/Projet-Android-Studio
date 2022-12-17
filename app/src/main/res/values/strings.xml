@@ -12,4 +12,8 @@
     <string name="OK">OK</string>
     <string name="nettoyer_cible">Déplacez-vous pour nettoyer des cibles !</string>
     <string name="erreur_position">Vous n\'êtes pas dans l\'arène, dirigez vous vers l\'université !</string>
+    <string name="MainMenuTitle">Les Nettoyeurs</string>
+    <string name="MainMenuLoginHint">John doe</string>
+    <string name="MainMenuPasswordHint">●●●●●●●●●</string>
+    <string name="MainMenuBoutonConnexion">Connection</string>
 </resources>
