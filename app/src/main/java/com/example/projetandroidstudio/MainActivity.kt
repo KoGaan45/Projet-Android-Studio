@@ -48,15 +48,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         this.setUpLocationListener()
-
-        /*
-        val btn = findViewById<Button>(R.id.boutton_test)
-
-        btn.setOnClickListener {
-            val intent = Intent(this, MainActivity2::class.java)
-            startActivity(intent)
-        }
-        */
     }
 
     override fun onResume() {

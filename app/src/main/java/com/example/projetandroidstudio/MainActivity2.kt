@@ -2,6 +2,7 @@ package com.example.projetandroidstudio
 
 import android.Manifest
 import android.content.ContentValues.TAG
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
@@ -9,7 +10,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
+import android.view.View
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -252,5 +256,38 @@ class MainActivity2 : AppCompatActivity() {
                 permissionsToRequest.toTypedArray(),
                 REQUEST_PERMISSIONS_REQUEST_CODE)
         }
+    }
+
+    fun logout(view: View)
+    {
+        var alertDialogBuilder = AlertDialog.Builder(this)
+
+        alertDialogBuilder.setTitle("Voulez-vous vous déconnecter?")
+
+        alertDialogBuilder.setPositiveButton(android.R.string.yes) { dialog, which ->
+            Toast.makeText(applicationContext, "Déconnexion", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+
+        alertDialogBuilder.setNegativeButton(android.R.string.cancel) { dialog, which ->
+            Toast.makeText(applicationContext, android.R.string.cancel, Toast.LENGTH_SHORT).show()
+        }
+
+        alertDialogBuilder.show()
+    }
+
+    fun goToChat(view: View)
+    {
+        val intent = Intent(this, ChatActivity::class.java)
+        intent.putExtra("session", joueur!!.session)
+        intent.putExtra("signature", joueur!!.signature)
+        intent.putExtra("nettoyeur", joueur!!.nettoyeur)
+        startActivity(intent)
+    }
+
+    fun goToStats(view: View)
+    {
+        //val intent = Intent(this, StatsEquipes::class.java)
+        //startActivity(intent)
     }
 }
