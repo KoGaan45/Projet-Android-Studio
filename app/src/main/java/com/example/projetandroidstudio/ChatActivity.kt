@@ -1,17 +1,21 @@
 package com.example.projetandroidstudio
 
 import android.content.ContentValues
-import android.location.Location
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+
 
 class ChatActivity : AppCompatActivity() {
 
     private var listeMessages = ListeMessages()
     private lateinit var recyclerView : RecyclerView
+    private lateinit var editText: EditText
     private lateinit var joueur : Joueur
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,6 +34,8 @@ class ChatActivity : AppCompatActivity() {
             )
         }
 
+        editText = findViewById<EditText>(R.id.MessageToSend)
+
         recyclerView = findViewById<RecyclerView>(R.id.ChatRecyclerView)
 
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -45,13 +51,37 @@ class ChatActivity : AppCompatActivity() {
             try {
                 runOnUiThread {
                     for (m in aAjouter!!) {
-                        if(!listeMessages.mMessages.contains(m)) listeMessages.ajouteMessage(m!!.id, m!!.date, m!!.auteur, m!!.contenu)
+                        // TODO gérer les doublons
+                        if(m !in listeMessages.mMessages) listeMessages.ajouteMessage(m!!.id, m!!.date, m!!.auteur, m!!.contenu)
                     }
+
+                    listeMessages.mMessages.sortBy { it.id }
+
+                    Log.d("LISTES DES MESSAGES", listeMessages.mMessages.toString())
+
                     recyclerView.adapter = MessagesRecyclerViewAdapter(listeMessages)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }.start()
+    }
+
+    fun sendMessage(view: View)
+    {
+        Thread {
+            val ws = WebserviceNewMessage(editText.text.toString())
+            val ok: Boolean = ws.call(joueur.session, joueur.signature)
+            if (!ok) runOnUiThread {
+                Toast.makeText(
+                    this,
+                    "Erreur dans l'envoi du message",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                runOnUiThread { this.getLastsMessage() }
+            }
+        }.start()
+
     }
 }

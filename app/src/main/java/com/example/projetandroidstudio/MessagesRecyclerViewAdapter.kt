@@ -1,10 +1,12 @@
 package com.example.projetandroidstudio
 
+import android.text.Html
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import java.text.SimpleDateFormat
 import java.util.*
 
 class MessagesRecyclerViewAdapter(var mValues: ListeMessages?) : RecyclerView.Adapter<MessagesRecyclerViewAdapter.ViewHolder>() {
@@ -12,14 +14,10 @@ class MessagesRecyclerViewAdapter(var mValues: ListeMessages?) : RecyclerView.Ad
     class ViewHolder(val mView: View) : RecyclerView.ViewHolder(
         mView
     ) {
-        val mAuteurview: TextView
-        val mDateMessage: TextView
         val mContentView: TextView
         var mItem: Message? = null
 
         init {
-            mAuteurview = mView.findViewById<View>(R.id.auteurMessage) as TextView
-            mDateMessage = mView.findViewById<View>(R.id.dateMessage) as TextView
             mContentView = mView.findViewById<View>(R.id.contenuMessage) as TextView
         }
 
@@ -35,12 +33,12 @@ class MessagesRecyclerViewAdapter(var mValues: ListeMessages?) : RecyclerView.Ad
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        var date = SimpleDateFormat("dd/MM HH:mm").format(mValues!!.get(position)!!.date)
+
         holder.mItem = mValues!!.get(position)
-        holder.mAuteurview.text = mValues!!.get(position)!!.auteur
         var textContent: String = mValues!!.get(position)!!.contenu
-        //if (textContent.length > 50) textContent = textContent.substring(0, 47) + "..."
-        holder.mContentView.text = textContent
-        holder.mDateMessage.text = mValues!!.get(position)!!.date.toString()
+        var sourceString = "<b>" + mValues!!.get(position)!!.auteur + " (" + date + "):</b> " + textContent;
+        holder.mContentView.text = Html.fromHtml(sourceString)
         holder.mView.setOnClickListener { v: View? ->
 
         }
