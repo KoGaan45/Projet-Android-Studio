@@ -86,11 +86,15 @@ class MainActivity : AppCompatActivity() {
                     Log.d(TAG,"Connexion échouée")
                 }
                 else {
-                    creerNettoyeur() // Création du nettoyeur
-                    if(joueur!!.nettoyeur == null){ // S'il est toujours null c'est que le joueur n'est pas en 3IA ou que le jeu ne la pas récupérer
-                        val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
-                        joueur = wsStats.call(joueur!!.session,joueur!!.signature)
-                        if(joueur!!.nettoyeur == null){ // Erreur se diriger vers 3IA
+                    //creerNettoyeur() // Création du nettoyeur
+                    //if(joueur!!.nettoyeur == null){ // S'il est toujours null c'est que le joueur n'est pas en 3IA ou que le jeu ne la pas récupérer
+                    val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
+                    joueur = wsStats.call(joueur!!.session, joueur!!.signature)
+                    joueur!!.loc = mCurrentLocation
+
+                    Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+joueur!!.loc!!.longitude.toString() + " | lattitude = "+joueur!!.loc!!.latitude.toString()
+                    + " | nom = " + joueur!!.nettoyeur + " | value = " + joueur!!.value + " | statut = " + joueur!!.statut)
+                        /*if(joueur!!.nettoyeur == null){ // Erreur se diriger vers 3IA
                             this.runOnUiThread(Runnable {
                                 AlertDialog.Builder(this)
                                     .setMessage(R.string.creation_nettoyeur_impossible)
@@ -102,15 +106,17 @@ class MainActivity : AppCompatActivity() {
                                     .setIcon(android.R.drawable.ic_dialog_alert)
                                     .show()
                             })
-                        }
-                    }
+                        }*/
+                    //}
 
                     // Si tous les tests sont passés démarrer la seconde activité contenant le jeu
-                    val intent = Intent(this,MainActivity2::class.java)
-                    intent.putExtra("mCurrentLocation", mCurrentLocation)
+                    val intent = Intent(this,GameActivity::class.java)
+                    intent.putExtra("currentLocation", joueur!!.loc)
                     intent.putExtra("session", joueur!!.session)
                     intent.putExtra("signature", joueur!!.signature)
                     intent.putExtra("nettoyeur", joueur!!.nettoyeur)
+                    intent.putExtra("value", joueur!!.value)
+                    intent.putExtra("statut", joueur!!.statut)
                     startActivity(intent)
                 }
             }
@@ -142,7 +148,7 @@ class MainActivity : AppCompatActivity() {
                         super.onLocationResult(locationResult)
                         for (location in locationResult.locations) {
                             mCurrentLocation = location
-                            Log.d(TAG,mCurrentLocation.longitude.toString())
+                            Log.d(TAG, mCurrentLocation.longitude.toString())
                         }
                     }
                 }, Looper.myLooper()
@@ -169,7 +175,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun creerNettoyeur() {
+    /*private fun creerNettoyeur() {
         Thread {
             val ws = WebServiceCreationNettoyeur()
             try{
@@ -184,5 +190,5 @@ class MainActivity : AppCompatActivity() {
             }
         }.start()
         Log.d(TAG,"creationNettoyeur")
-    }
+    }*/
 }

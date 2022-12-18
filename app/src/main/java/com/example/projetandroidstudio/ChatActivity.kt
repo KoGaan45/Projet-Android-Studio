@@ -26,11 +26,14 @@ class ChatActivity : AppCompatActivity() {
             val extras = intent.extras
             if (extras != null) {
                 Log.d(ContentValues.TAG,"SESSION = "+extras.getInt("session"))
-                joueur = Joueur(extras.getInt("session"),extras.getLong("signature"),extras.getString("nettoyeur"))
+                joueur = Joueur(extras.getInt("session"),extras.getLong("signature"),extras.getString("nettoyeur"), null, null, null)
             }
         } else {
-            joueur = Joueur(savedInstanceState.getSerializable("session") as Int,
-                savedInstanceState.getSerializable("signature") as Long, savedInstanceState.getSerializable("nettoyeur") as String?
+            joueur = Joueur(
+                savedInstanceState.getSerializable("session") as Int,
+                savedInstanceState.getSerializable("signature") as Long,
+                savedInstanceState.getSerializable("nettoyeur") as String?,
+                null, null, null
             )
         }
 
@@ -51,7 +54,6 @@ class ChatActivity : AppCompatActivity() {
             try {
                 runOnUiThread {
                     for (m in aAjouter!!) {
-                        // TODO gérer les doublons
                         if(m !in listeMessages.mMessages) listeMessages.ajouteMessage(m!!.id, m!!.date, m!!.auteur, m!!.contenu)
                     }
 

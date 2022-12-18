@@ -7,7 +7,7 @@
     android:id="@+id/linearLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity2">
+    tools:context=".GameActivity">
 
     <TextView
         android:id="@+id/textView"

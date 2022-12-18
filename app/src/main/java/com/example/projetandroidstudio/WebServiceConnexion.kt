@@ -56,7 +56,7 @@ class WebServiceConnexion {
             val messagesXML: NodeList = nodeContent.getChildNodes()
             val session : Int = Integer.parseInt(messagesXML.item(0).textContent.toString())
             val signature : Long = java.lang.Long.parseLong(messagesXML.item(1).textContent.toString())
-            return Joueur(session, signature, null)
+            return Joueur(session, signature, null, null, null, null)
         } catch (e: Exception) {
             e.printStackTrace()
             null

@@ -11,13 +11,14 @@ import java.net.URLConnection
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 
-class WebServiceStatsNettoyeur {
+class WebServiceDeplace {
 
-    private val TAG = "WSStatsNettoyeur"
+    private val TAG = "WSDeplace"
 
-    fun call(session : Int, signature : Long) : Joueur? {
+    fun call(session : Int, signature : Long, loc : Location) : NodeList? {
         return try {
-            val url = URL("http://51.68.124.144/nettoyeurs_srv/stats_nettoyeur.php?session=$session&signature=$signature")
+            val url = URL("http://51.68.124.144/nettoyeurs_srv/deplace.php?session=$session&signature=$signature&lon=${loc.longitude}&lat=${loc.latitude}")
+            Log.d(TAG, "http://51.68.124.144/nettoyeurs_srv/deplace.php?session=$session&signature=$signature&lon=${loc.longitude}&lat=${loc.latitude}")
             val cnx: URLConnection = url.openConnection()
             val `in`: InputStream = cnx.getInputStream()
             val dbf: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
@@ -26,23 +27,13 @@ class WebServiceStatsNettoyeur {
             var nl: NodeList = xml.getElementsByTagName("STATUS")
             val nodeStatus: Node = nl.item(0)
             val status: String = nodeStatus.getTextContent()
-
-            Log.d(TAG, "Thread Connexion : status $status")
+            Log.d(TAG, "Thread deplacer joueur : status $status")
             if (!status.startsWith("OK")) return null
-
             nl = xml.getElementsByTagName("PARAMS")
             val nodeContent: Node = nl.item(0)
-            val messagesXML: NodeList = nodeContent.getChildNodes()
-            Log.d(TAG,messagesXML.item(0).textContent.toString())
+            val messagesXML: NodeList = nodeContent.childNodes
 
-            val location = Location("")
-            location.longitude = messagesXML.item(2).textContent.toDouble()
-            location.latitude = messagesXML.item(2).textContent.toDouble()
-            val name = messagesXML.item(0).textContent.toString()
-            val value = messagesXML.item(1).textContent.toString()
-            val etat = messagesXML.item(4).textContent.toString()
-
-            return Joueur(session, signature, name, value, location, etat)
+            return messagesXML
         } catch (e: Exception) {
             e.printStackTrace()
             null
