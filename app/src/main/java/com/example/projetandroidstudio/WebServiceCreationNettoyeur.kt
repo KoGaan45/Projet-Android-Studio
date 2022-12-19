@@ -26,9 +26,9 @@ class WebServiceCreationNettoyeur {
             val xml: Document = db.parse(`in`)
             var nl: NodeList = xml.getElementsByTagName("STATUS")
             val nodeStatus: Node = nl.item(0)
-            val status: String = nodeStatus.getTextContent()
+            val status: String = nodeStatus.textContent
             Log.d(TAG, "Thread connexion : status $status")
-            if (!status.startsWith("OK")) return null
+            if (!status.startsWith("OK")) return status
             nl = xml.getElementsByTagName("PARAMS")
             val nodeContent: Node = nl.item(0)
             val messagesXML: NodeList = nodeContent.getChildNodes()

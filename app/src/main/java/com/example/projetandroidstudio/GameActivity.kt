@@ -5,8 +5,6 @@ import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.Icon
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
@@ -30,11 +28,10 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Overlay
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 import org.w3c.dom.NodeList
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.concurrent.schedule
 
 
 class GameActivity : AppCompatActivity() {
@@ -59,7 +56,6 @@ class GameActivity : AppCompatActivity() {
             val extras = intent.extras
             if (extras != null) {
                 Log.d(TAG,"SESSION = "+extras.getInt("session"))
-                //mCurrentLocation = extras.get("mCurrentLocation") as Location
                 joueur = Joueur(
                     extras.getInt("session"),
                     extras.getLong("signature"),
@@ -70,7 +66,6 @@ class GameActivity : AppCompatActivity() {
                 )
             }
         } else {
-            //mCurrentLocation = savedInstanceState.getSerializable("mCurrentLocation") as Location
             joueur = Joueur(
                 savedInstanceState.getSerializable("session") as Int,
                 savedInstanceState.getSerializable("signature") as Long,
@@ -91,6 +86,7 @@ class GameActivity : AppCompatActivity() {
 
         boutonVoyage = findViewById<Button>(R.id.VoyageButton)
 
+        // Check l'état du joueur à la création pour changer l'affichage du bouton
         when (joueur.statut) {
             "DEAD" -> boutonVoyage.text = "Créer nettoyeur"
             "UP" -> boutonVoyage.text = "Mode Voyage"
@@ -108,7 +104,7 @@ class GameActivity : AppCompatActivity() {
             }
         }
 
-
+        // Check l'état du joueur pour changer la fonction appelé
         boutonVoyage.setOnClickListener {
             if (joueur.statut == "DEAD") this.creerNettoyeur()
 
@@ -141,16 +137,25 @@ class GameActivity : AppCompatActivity() {
 
         map.setMultiTouchControls(true)
         map.overlays.add(rotationGestureOverlay)
-        addMarker(GeoPoint(47.845464, 1.939825),"Batiment 3IA","Dirigez-vous ici pour créer un nettoyeur", "3IA")
+        addMarker(GeoPoint(47.845464, 1.939825),"Batiment 3IA","Dirigez-vous ici pour créer un nettoyeur", "3IA", "3IA")
     }
 
-    private fun addMarker(center: GeoPoint?, title : String, snippet : String, type: String) {
-        val marker = Marker(map)
-        marker.position = center
-        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-        map.overlays.add(marker)
+    private fun addMarker(center: GeoPoint?, title : String, snippet : String, type: String, idMarker: String) {
+        for (i in 0 until map.overlays.size) {
+            val overlay: Overlay = map.overlays[i]
+            if (overlay is Marker && (overlay as Marker).id == idMarker) {
+                map.overlays.remove(overlay)
+                break
+            }
+        }
+
         map.invalidate()
 
+        val marker = Marker(map)
+        marker.position = center
+        marker.id = idMarker
+        marker.title = title
+        marker.snippet = snippet
 
         when (type) {
             "CIBLE" -> marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.marker_cible, null)!!
@@ -158,9 +163,9 @@ class GameActivity : AppCompatActivity() {
             "ENNEMI" -> marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.marker_ennemi, null)!!
         }
 
-
-        marker.title = title
-        marker.snippet = snippet
+        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        map.overlays.add(marker)
+        map.invalidate()
     }
 
     private fun checkPermissionForMap() {
@@ -220,7 +225,7 @@ class GameActivity : AppCompatActivity() {
 
                         Log.d(TAG,"Joueur session : ${joueur.session} signature : ${joueur.signature} nettoyeur : ${joueur.nettoyeur}")
 
-                        if(modeJeu) addMarker(GeoPoint(joueur.loc), joueur.nettoyeur!!,"Votre position", "ME")
+                        if(modeJeu) addMarker(GeoPoint(joueur.loc), joueur.nettoyeur!!,"Votre position", "ME", "ME")
 
                         time += 5;
                     }
@@ -343,12 +348,12 @@ class GameActivity : AppCompatActivity() {
                 runOnUiThread {
                     for (c in cibles)
                     {
-                        addMarker(GeoPoint(c.loc),"Cible n°${c.id}","Valeur: ${c.value}", "CIBLE")
+                        addMarker(GeoPoint(c.loc),"Cible n°${c.id}","Valeur: ${c.value}", "CIBLE", "${c.id}${c.value}")
                     }
 
                     for (e in ennemis)
                     {
-                        addMarker(GeoPoint(e.loc),"Ennemi n°${e.id}","Valeur: ${e.value}, il y a ${e.lifespan}s", "ENNEMI")
+                        addMarker(GeoPoint(e.loc),"Ennemi n°${e.id}","Valeur: ${e.value}, il y a ${e.lifespan}s", "ENNEMI", "${e.id}")
                     }
                 }
             } catch (e: Exception) {
@@ -459,7 +464,8 @@ class GameActivity : AppCompatActivity() {
     private fun getStatutJoueur() {
         Thread {
             val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
-            joueur = wsStats.call(joueur!!.session, joueur!!.signature)!!
+            val j = wsStats.call(joueur!!.session, joueur!!.signature)!!
+            joueur.statut = j.statut
         }.start()
     }
 
@@ -472,11 +478,30 @@ class GameActivity : AppCompatActivity() {
 
         Thread {
             val ws = WebServiceCreationNettoyeur()
-            joueur.nettoyeur = ws.call(joueur.session, joueur.signature, joueur.loc!!)
+            val nettoyeur = ws.call(joueur.session, joueur.signature, joueur.loc!!) ?: return@Thread
 
             try{
-                Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+joueur.loc!!.longitude.toString() + " | lattitude = "+joueur.loc!!.latitude.toString())
-                Log.d(TAG,"-----> "+joueur!!.nettoyeur)
+                if (nettoyeur!!.startsWith("KO"))
+                {
+                    val textView : TextView = findViewById(R.id.textView)
+
+                    if (nettoyeur == "KO-not in 3IA")
+                        textView.text = "Vous n'êtes pas en 3IA, création du nettoyeur impossible!"
+                    else
+                        textView.text = "Le délai de 15 minutes n'est pas terminé!"
+
+                    textView.setTextColor(ContextCompat.getColor(applicationContext,R.color.IndianRed))
+                }
+                else
+                {
+                    joueur.nettoyeur = nettoyeur
+                    modeVoyage = true
+                    getStatutJoueur()
+                    boutonVoyage.text = "Remise en jeu"
+
+                    Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+joueur.loc!!.longitude.toString() + " | lattitude = "+joueur.loc!!.latitude.toString())
+                    Log.d(TAG,"-----> "+joueur!!.nettoyeur)
+                }
             }
             catch(e : Exception)
             {
