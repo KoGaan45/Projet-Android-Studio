@@ -17,8 +17,12 @@ class WebServiceDeplace {
 
     fun call(session : Int, signature : Long, loc : Location) : NodeList? {
         return try {
-            val url = URL("http://51.68.124.144/nettoyeurs_srv/deplace.php?session=$session&signature=$signature&lon=${loc.longitude}&lat=${loc.latitude}")
-            Log.d(TAG, "http://51.68.124.144/nettoyeurs_srv/deplace.php?session=$session&signature=$signature&lon=${loc.longitude}&lat=${loc.latitude}")
+            val url =
+                URL("http://51.68.124.144/nettoyeurs_srv/deplace.php?session=$session&signature=$signature&lon=${loc.longitude}&lat=${loc.latitude}")
+            Log.d(
+                TAG,
+                "http://51.68.124.144/nettoyeurs_srv/deplace.php?session=$session&signature=$signature&lon=${loc.longitude}&lat=${loc.latitude}"
+            )
             val cnx: URLConnection = url.openConnection()
             val `in`: InputStream = cnx.getInputStream()
             val dbf: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
@@ -31,9 +35,8 @@ class WebServiceDeplace {
             if (!status.startsWith("OK")) return null
             nl = xml.getElementsByTagName("PARAMS")
             val nodeContent: Node = nl.item(0)
-            val messagesXML: NodeList = nodeContent.childNodes
 
-            return messagesXML
+            return nodeContent.childNodes
         } catch (e: Exception) {
             e.printStackTrace()
             null

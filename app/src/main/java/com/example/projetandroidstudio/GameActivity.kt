@@ -5,6 +5,8 @@ import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.Icon
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
@@ -20,6 +22,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.preference.PreferenceManager
 import com.google.android.gms.location.*
 import org.osmdroid.config.Configuration.*
@@ -39,14 +42,14 @@ class GameActivity : AppCompatActivity() {
     private val REQUEST_PERMISSIONS_REQUEST_CODE = 1
     private lateinit var map : MapView
     private lateinit var mLastLocation: Location
-    //private lateinit var mCurrentLocation: Location
     private lateinit var sharedPref: SharedPreferences
     private var fusedLocationProviderClient : FusedLocationProviderClient? = null
     private var startPoint : GeoPoint = GeoPoint(47.845464, 1.939825)
     private var modeJeu : Boolean = true
     private var modeVoyage : Boolean = false
-    private var miseEnModeVoyage : Boolean = false
+    private var modeNettoyage : Boolean = false
     private lateinit var joueur : Joueur
+
     private lateinit var boutonVoyage: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,6 +94,14 @@ class GameActivity : AppCompatActivity() {
         when (joueur.statut) {
             "DEAD" -> boutonVoyage.text = "Créer nettoyeur"
             "UP" -> boutonVoyage.text = "Mode Voyage"
+            "NET" -> {
+                modeNettoyage = true
+                boutonVoyage.text = "Mode Voyage"
+            }
+            "PACK" -> {
+                modeVoyage = true
+                boutonVoyage.text = "Remise en jeu"
+            }
             else -> {
                 boutonVoyage.text = "Remise en jeu"
                 modeVoyage = true
@@ -130,15 +141,24 @@ class GameActivity : AppCompatActivity() {
 
         map.setMultiTouchControls(true)
         map.overlays.add(rotationGestureOverlay)
-        addMarker(GeoPoint(47.845464, 1.939825),"Batiment 3IA","Dirigez-vous ici pour créer un nettoyeur")
+        addMarker(GeoPoint(47.845464, 1.939825),"Batiment 3IA","Dirigez-vous ici pour créer un nettoyeur", "3IA")
     }
 
-    private fun addMarker(center: GeoPoint?, title : String, snippet : String) {
+    private fun addMarker(center: GeoPoint?, title : String, snippet : String, type: String) {
         val marker = Marker(map)
         marker.position = center
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         map.overlays.add(marker)
         map.invalidate()
+
+
+        when (type) {
+            "CIBLE" -> marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.marker_cible, null)!!
+            "ME" -> marker.icon = ResourcesCompat.getDrawable(resources, org.osmdroid.library.R.drawable.person, null)!!
+            "ENNEMI" -> marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.marker_ennemi, null)!!
+        }
+
+
         marker.title = title
         marker.snippet = snippet
     }
@@ -188,24 +208,19 @@ class GameActivity : AppCompatActivity() {
                         }
 
                         // A ENLEVER
-                        joueur.loc!!.latitude = 47.845095
-                        joueur.loc!!.longitude = 1.937282
+                        //joueur.loc!!.latitude = 47.845095
+                        //joueur.loc!!.longitude = 1.937282
 
-                        if (!miseEnModeVoyage && !modeVoyage)
+                        if (!modeVoyage && joueur.statut != "DEAD")
                         {
                             checkPosition()
+                            calculVitesseJoueur(time)
                         }
+                        else mLastLocation = joueur.loc!!
 
                         Log.d(TAG,"Joueur session : ${joueur.session} signature : ${joueur.signature} nettoyeur : ${joueur.nettoyeur}")
 
-                        if (time % 15 == 0 && !modeVoyage && !miseEnModeVoyage)
-                        {
-                            deplaceJoueur()
-                        }
-
-                        if(modeJeu) {
-                            addMarker(GeoPoint(joueur.loc),joueur.nettoyeur!!,"Votre position")
-                        }
+                        if(modeJeu) addMarker(GeoPoint(joueur.loc), joueur.nettoyeur!!,"Votre position", "ME")
 
                         time += 5;
                     }
@@ -215,20 +230,22 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun checkPosition(): Boolean {
-        //Log.d(TAG,"-----> curent longitude: "+mCurrentLocation.longitude.toString()+" & latitude = "+mCurrentLocation.latitude.toString())
-        return if((47.840 < joueur.loc!!.latitude && joueur.loc!!.latitude < 47.847) ||
-            (1.937 < joueur.loc!!.longitude && joueur.loc!!.longitude < 1.941)){
+        return if((47.840 < joueur.loc!!.latitude && joueur.loc!!.latitude < 47.847) || (1.937 < joueur.loc!!.longitude && joueur.loc!!.longitude < 1.941)){
             startPoint = GeoPoint(joueur.loc!!.latitude, joueur.loc!!.longitude)
+
             val textView : TextView = findViewById(R.id.textView)
             textView.text = resources.getString(R.string.nettoyer_cible)
             textView.setTextColor(ContextCompat.getColor(applicationContext,R.color.Aquamarine))
-            modeJeu=true
+            modeJeu = true
+
             true
         } else{
             val textView : TextView = findViewById(R.id.textView)
             textView.text = resources.getString(R.string.erreur_position)
             textView.setTextColor(ContextCompat.getColor(applicationContext,R.color.IndianRed))
-            modeJeu=false
+
+            modeJeu = false
+
             false
         }
     }
@@ -255,33 +272,32 @@ class GameActivity : AppCompatActivity() {
         }
     }
 
-    fun calculVitesseJoueur(lastLocation: Location, currentLocation: Location)
+    fun calculVitesseJoueur(time: Int)
     {
         val results = FloatArray(1)
 
-        Location.distanceBetween(lastLocation.latitude, lastLocation.longitude, currentLocation.latitude, currentLocation.longitude, results)
+        Location.distanceBetween(mLastLocation.latitude, mLastLocation.longitude, joueur.loc!!.latitude, joueur.loc!!.longitude, results)
 
         val kmPerHour = results[0] / 5 * 3600 / 1000
 
         Log.d(TAG,"-----> distance: " + results[0].toString())
         Log.d(TAG, "-----> km/h: $kmPerHour")
 
+        // en fonction de la vitesse du joueur on le met en mode voyage ou on le déplace
         if (kmPerHour > 15.0)
         {
-            // TODO Mettre en mode voyage après 1 minutes si supérieur à une vitesse définie
-            // Ne pas mettre à jour la dernière position connue du joueur
-        }
-        else
-        {
-            mLastLocation = joueur.loc!!
-        }
+            Toast.makeText(applicationContext, "Vous allez trop vite! Passage en mode voyage", Toast.LENGTH_SHORT).show()
+            this.miseEnModeVoyageForce()
+        } else if (kmPerHour <= 15.0 && time % 15 == 0) this.deplaceJoueur()
+
+        mLastLocation = joueur.loc!!
     }
 
     private fun deplaceJoueur()
     {
         Thread {
             val ws = WebServiceDeplace()
-            val nl: NodeList = ws.call(joueur.session, joueur.signature, joueur.loc!!)!!
+            val nl: NodeList = ws.call(joueur.session, joueur.signature, joueur.loc!!) ?: return@Thread
 
             val listeCiblesXML: NodeList = nl.item(0).childNodes
             val listeEnnemisXML: NodeList = nl.item(1).childNodes
@@ -327,7 +343,12 @@ class GameActivity : AppCompatActivity() {
                 runOnUiThread {
                     for (c in cibles)
                     {
-                        addMarker(GeoPoint(c.loc),"Cible n°${c.id}","Valeur: ${c.value}")
+                        addMarker(GeoPoint(c.loc),"Cible n°${c.id}","Valeur: ${c.value}", "CIBLE")
+                    }
+
+                    for (e in ennemis)
+                    {
+                        addMarker(GeoPoint(e.loc),"Ennemi n°${e.id}","Valeur: ${e.value}, il y a ${e.lifespan}s", "ENNEMI")
                     }
                 }
             } catch (e: Exception) {
@@ -338,6 +359,13 @@ class GameActivity : AppCompatActivity() {
 
     private fun miseEnModeVoyage()
     {
+        Log.d("VOYAGE", joueur.statut!!)
+
+        if (joueur.statut != "UP") {
+            Toast.makeText(applicationContext, "Vous ne pouvez pas encore faire cela", Toast.LENGTH_LONG).show()
+            return
+        }
+
         val textView : TextView = findViewById(R.id.textView)
 
         var timeRemaining = 60
@@ -349,36 +377,36 @@ class GameActivity : AppCompatActivity() {
 
             override fun onFinish() {
                 window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                getStatutJoueur()
+                checkPosition()
             }
         }
 
         val alertDialogBuilder = AlertDialog.Builder(this)
 
-        alertDialogBuilder.setTitle("Voulez-vous vous déconnecter?")
+        alertDialogBuilder.setTitle("Voulez-vous vous passer en mode voyage?")
 
         // Si l'utilisateur veut entrer en mode voyage exécuter l'action suivante
         alertDialogBuilder.setPositiveButton(android.R.string.yes) { dialog, which ->
-            //Toast.makeText(applicationContext, "", Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, "Toutes les actions sont bloqués durant le passage en mode voyage", Toast.LENGTH_LONG).show()
 
             window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-            
-            //Timer("Passage en mode Voyage", false).schedule(delay = 60000) {
-                Thread {
-                    val ws = WebServiceModeVoyage()
-                    modeVoyage = ws.call(joueur.session, joueur.signature)!!
-                    timer.start()
 
-                    try {
-                        runOnUiThread {
-                            miseEnModeVoyage = false
+            Thread {
+                val ws = WebServiceModeVoyage()
+                modeVoyage = ws.call(joueur.session, joueur.signature)!!
+                timer.start()
 
-                            if (modeVoyage) boutonVoyage.text = "Remise en jeu"
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+                getStatutJoueur()
+
+                try {
+                    runOnUiThread {
+                        if (modeVoyage) boutonVoyage.text = "Remise en jeu"
                     }
-                }.start()
-            //}
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }.start()
         }
 
         alertDialogBuilder.setNegativeButton(android.R.string.cancel) { _, _->
@@ -387,13 +415,67 @@ class GameActivity : AppCompatActivity() {
         alertDialogBuilder.show()
     }
 
+    private fun miseEnModeVoyageForce()
+    {
+        if (joueur.statut != "UP") return
+
+        val textView : TextView = findViewById(R.id.textView)
+
+        var timeRemaining = 60
+        val timer = object: CountDownTimer(60000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                timeRemaining -= 1
+                textView.text = "$timeRemaining secondes restantes avant mode voyage!"
+            }
+
+            override fun onFinish() {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                getStatutJoueur()
+                checkPosition()
+            }
+        }
+
+        Toast.makeText(applicationContext, "Toutes les actions sont bloqués durant le passage en mode voyage", Toast.LENGTH_LONG).show()
+
+        window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+
+        Thread {
+            val ws = WebServiceModeVoyage()
+            modeVoyage = ws.call(joueur.session, joueur.signature)!!
+            timer.start()
+
+            getStatutJoueur()
+
+            try {
+                runOnUiThread {
+                    if (modeVoyage) boutonVoyage.text = "Remise en jeu"
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
+    }
+
+    private fun getStatutJoueur() {
+        Thread {
+            val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
+            joueur = wsStats.call(joueur!!.session, joueur!!.signature)!!
+        }.start()
+    }
+
     private fun creerNettoyeur() {
+        if (joueur.statut != "DEAD")
+        {
+            Toast.makeText(applicationContext, "Votre nettoyeur n'est pas mort", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         Thread {
             val ws = WebServiceCreationNettoyeur()
+            joueur.nettoyeur = ws.call(joueur.session, joueur.signature, joueur.loc!!)
+
             try{
                 Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+joueur.loc!!.longitude.toString() + " | lattitude = "+joueur.loc!!.latitude.toString())
-                //joueur!!.nettoyeur = ws.call(joueur!!.session, joueur!!.signature,longitude!!,lattitude!!)
-                joueur!!.nettoyeur = ws.call(joueur!!.session, joueur!!.signature,"1.93943","47.845560")
                 Log.d(TAG,"-----> "+joueur!!.nettoyeur)
             }
             catch(e : Exception)
@@ -405,10 +487,20 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun remiseEnJeu() {
+        Log.d("REMISE", joueur.statut!!)
+
+        if (joueur.statut != "VOY") {
+            Toast.makeText(applicationContext, "Vous ne pouvez pas encore faire cela", Toast.LENGTH_LONG).show()
+            return
+        }
+
         Thread {
             val ws = WebServiceRemiseEnJeu()
             val enJeu = ws.call(joueur.session, joueur.signature, joueur.loc!!)
+
             try{
+                getStatutJoueur()
+
                 runOnUiThread {
                     if (enJeu)
                     {

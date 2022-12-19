@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity() {
             }
         }.start()
 
-        Log.d(TAG,"mBouttonConnecter")
+        //Log.d(TAG,"mBouttonConnecter")
     }
 
     private fun setUpLocationListener() {
@@ -148,7 +148,7 @@ class MainActivity : AppCompatActivity() {
                         super.onLocationResult(locationResult)
                         for (location in locationResult.locations) {
                             mCurrentLocation = location
-                            Log.d(TAG, mCurrentLocation.longitude.toString())
+                            //Log.d(TAG, mCurrentLocation.longitude.toString())
                         }
                     }
                 }, Looper.myLooper()
