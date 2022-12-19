@@ -15,6 +15,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -51,8 +52,9 @@ class GameActivity : AppCompatActivity() {
     private var cibles: ArrayList<Cible> = ArrayList()
     private var ennemis: ArrayList<Ennemi> = ArrayList()
     private lateinit var joueur : Joueur
-
     private lateinit var boutonVoyage: Button
+    private lateinit var imageStatut: ImageView
+    private lateinit var texteStatut: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,23 +91,39 @@ class GameActivity : AppCompatActivity() {
         this.checkPermissionForMap()
         this.setUpMap()
 
-        boutonVoyage = findViewById<Button>(R.id.VoyageButton)
+        boutonVoyage = findViewById(R.id.VoyageButton)
+        imageStatut = findViewById(R.id.imageStatut)
+        texteStatut = findViewById(R.id.texteStatut)
 
         // Check l'état du joueur à la création pour changer l'affichage du bouton
         when (joueur.statut) {
-            "DEAD" -> boutonVoyage.text = "Créer nettoyeur"
-            "UP" -> boutonVoyage.text = "Mode Voyage"
+            "DEAD" -> {
+                boutonVoyage.text = "Créer nettoyeur"
+                imageStatut.setImageResource(R.drawable.dead_state)
+                texteStatut.text = "MORT"
+            }
+            "UP" -> {
+                boutonVoyage.text = "Mode Voyage"
+                imageStatut.setImageResource(R.drawable.alive_state)
+                texteStatut.text = "EN VIE"
+            }
             "NET" -> {
                 modeNettoyage = true
                 boutonVoyage.text = "Mode Voyage"
+                imageStatut.setImageResource(R.drawable.cleaning_state)
+                texteStatut.text = "NETTOYAGE"
             }
             "PACK" -> {
                 modeVoyage = true
                 boutonVoyage.text = "Remise en jeu"
+                imageStatut.setImageResource(R.drawable.packing_state)
+                texteStatut.text = "SE PREPARE A VOYAGER"
             }
             else -> {
                 boutonVoyage.text = "Remise en jeu"
                 modeVoyage = true
+                imageStatut.setImageResource(R.drawable.travel_state)
+                texteStatut.text = "VOYAGE"
             }
         }
 
@@ -692,6 +710,36 @@ class GameActivity : AppCompatActivity() {
         Thread {
             val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
             joueur = wsStats.call(joueur!!.session, joueur!!.signature)!!
+
+            try {
+                runOnUiThread {
+                    when (joueur.statut) {
+                        "DEAD" -> {
+                            imageStatut.setImageResource(R.drawable.dead_state)
+                            texteStatut.text = "MORT"
+                        }
+                        "UP" -> {
+                            imageStatut.setImageResource(R.drawable.alive_state)
+                            texteStatut.text = "EN VIE"
+                        }
+                        "NET" -> {
+                            imageStatut.setImageResource(R.drawable.cleaning_state)
+                            texteStatut.text = "NETTOYAGE"
+                        }
+                        "PACK" -> {
+                            imageStatut.setImageResource(R.drawable.packing_state)
+                            texteStatut.text = "SE PREPARE A VOYAGER"
+                        }
+                        else -> {
+                            imageStatut.setImageResource(R.drawable.travel_state)
+                            texteStatut.text = "VOYAGE"
+                        }
+                    }
+                }
+            } catch(e : Exception)
+            {
+                e.printStackTrace()
+            }
         }.start()
     }
 
