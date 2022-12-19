@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Looper
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
@@ -23,15 +24,15 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.preference.PreferenceManager
 import com.google.android.gms.location.*
-import org.osmdroid.config.Configuration.*
+import org.osmdroid.config.Configuration.getInstance
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Overlay
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
+import org.osmdroid.views.overlay.infowindow.InfoWindow
 import org.w3c.dom.NodeList
-import java.util.*
 
 
 class GameActivity : AppCompatActivity() {
@@ -45,6 +46,10 @@ class GameActivity : AppCompatActivity() {
     private var modeJeu : Boolean = true
     private var modeVoyage : Boolean = false
     private var modeNettoyage : Boolean = false
+    private var idCible: Int = -1
+    private var idMarker: String = ""
+    private var cibles: ArrayList<Cible> = ArrayList()
+    private var ennemis: ArrayList<Ennemi> = ArrayList()
     private lateinit var joueur : Joueur
 
     private lateinit var boutonVoyage: Button
@@ -79,9 +84,9 @@ class GameActivity : AppCompatActivity() {
 
         sharedPref = getPreferences(android.content.Context.MODE_PRIVATE) ?: return
 
+        mLastLocation = joueur.loc!!
         this.setUpLocationListener()
         this.checkPermissionForMap()
-        mLastLocation = joueur.loc!!
         this.setUpMap()
 
         boutonVoyage = findViewById<Button>(R.id.VoyageButton)
@@ -106,11 +111,20 @@ class GameActivity : AppCompatActivity() {
 
         // Check l'état du joueur pour changer la fonction appelé
         boutonVoyage.setOnClickListener {
-            if (joueur.statut == "DEAD") this.creerNettoyeur()
-
-            if (joueur.statut == "VOY") this.remiseEnJeu()
-
-            if (joueur.statut == "UP") this.miseEnModeVoyage()
+            if (idCible != -1)
+            {
+                if (idMarker.startsWith("Cible"))
+                    this.nettoyerCible()
+                else
+                    this.nettoyerEnnemi()
+            }
+            else {
+                when (joueur.statut) {
+                    "DEAD" -> this.creerNettoyeur()
+                    "UP" -> this.miseEnModeVoyage()
+                    "VOY" -> this.remiseEnJeu()
+                }
+            }
         }
     }
 
@@ -137,13 +151,27 @@ class GameActivity : AppCompatActivity() {
 
         map.setMultiTouchControls(true)
         map.overlays.add(rotationGestureOverlay)
+
+        val touchOverlay: Overlay = object : Overlay(this) {
+            override fun onSingleTapConfirmed(e: MotionEvent, mapView: MapView): Boolean {
+                InfoWindow.closeAllInfoWindowsOn(map)
+                if (joueur.statut == "UP") boutonVoyage.text = "Mode Voyage"
+
+                idCible = -1
+                idMarker = ""
+                Toast.makeText(applicationContext, "Vous avez déselectionner la cible!", Toast.LENGTH_SHORT)
+                return true
+            }
+        }
+        map.overlays.add(touchOverlay)
+
         addMarker(GeoPoint(47.845464, 1.939825),"Batiment 3IA","Dirigez-vous ici pour créer un nettoyeur", "3IA", "3IA")
     }
 
-    private fun addMarker(center: GeoPoint?, title : String, snippet : String, type: String, idMarker: String) {
+    private fun addMarker(center: GeoPoint?, title : String, snippet : String, type: String, markerId: String) {
         for (i in 0 until map.overlays.size) {
             val overlay: Overlay = map.overlays[i]
-            if (overlay is Marker && (overlay as Marker).id == idMarker) {
+            if (overlay is Marker && (overlay as Marker).id == markerId) {
                 map.overlays.remove(overlay)
                 break
             }
@@ -153,7 +181,7 @@ class GameActivity : AppCompatActivity() {
 
         val marker = Marker(map)
         marker.position = center
-        marker.id = idMarker
+        marker.id = markerId
         marker.title = title
         marker.snippet = snippet
 
@@ -161,6 +189,48 @@ class GameActivity : AppCompatActivity() {
             "CIBLE" -> marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.marker_cible, null)!!
             "ME" -> marker.icon = ResourcesCompat.getDrawable(resources, org.osmdroid.library.R.drawable.person, null)!!
             "ENNEMI" -> marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.marker_ennemi, null)!!
+        }
+
+        marker.setOnMarkerClickListener { marker, mapView ->
+            marker.showInfoWindow()
+            //if (marker.mPanToView) mapView.controller.animateTo(marker.position)
+            if (joueur.statut == "UP")
+            {
+                if (marker.id.startsWith("Cible:"))
+                {
+                    for (c in cibles)
+                    {
+                        if (c.loc.longitude == marker.position.longitude && c.loc.latitude == marker.position.latitude)
+                        {
+                            idCible = c.id
+                            idMarker = marker.id
+                            boutonVoyage.text = "Nettoyer cible"
+                            break
+                        }
+                    }
+                }
+                else if (marker.id.startsWith("Cible:"))
+                {
+                    for (e in ennemis)
+                    {
+                        if (e.loc.longitude == marker.position.longitude && e.loc.latitude == marker.position.latitude)
+                        {
+                            idCible = e.id
+                            idMarker = marker.id
+                            boutonVoyage.text = "Nettoyer ennemi"
+                            break
+                        }
+                    }
+                }
+                else
+                {
+                    idCible = -1
+                    idMarker = ""
+                    boutonVoyage.text = "Mode Voyage"
+                }
+            }
+
+            true
         }
 
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
@@ -216,7 +286,7 @@ class GameActivity : AppCompatActivity() {
                         //joueur.loc!!.latitude = 47.845095
                         //joueur.loc!!.longitude = 1.937282
 
-                        if (!modeVoyage && joueur.statut != "DEAD")
+                        if (!modeVoyage && !modeNettoyage && joueur.statut != "DEAD")
                         {
                             checkPosition()
                             calculVitesseJoueur(time)
@@ -253,6 +323,163 @@ class GameActivity : AppCompatActivity() {
 
             false
         }
+    }
+
+    private fun nettoyerCible()
+    {
+        if (idCible == -1)
+        {
+            Toast.makeText(applicationContext, "Aucune cible sélectionner!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val markerId = idMarker
+        val textView : TextView = findViewById(R.id.textView)
+        var timeRemaining = 60
+        val timer = object: CountDownTimer(60000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                timeRemaining -= 1
+                textView.text = "$timeRemaining secondes restantes avant la fin du nettoyage!"
+            }
+
+            override fun onFinish() {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                modeNettoyage = false
+                for (i in 0 until map.overlays.size) {
+                    val overlay: Overlay = map.overlays[i]
+                    if (overlay is Marker && (overlay as Marker).id == markerId) {
+                        map.overlays.remove(overlay)
+                        break
+                    }
+                }
+                getStatutJoueur()
+            }
+        }
+
+        Thread {
+            val ws = WebServiceFrappeCible()
+            val resultat = ws.call(joueur.session, joueur.signature, idCible) ?: return@Thread
+
+            try{
+                runOnUiThread {
+                    if (resultat.startsWith("KO"))
+                    {
+                        Toast.makeText(applicationContext, "Vous êtes trop loin de votre cible!", Toast.LENGTH_SHORT).show()
+                        idCible = -1
+                        idMarker = ""
+                        boutonVoyage.text = "Mode Voyage"
+                        InfoWindow.closeAllInfoWindowsOn(map)
+                        return@runOnUiThread
+                    }
+
+                    val delimiter = " | "
+                    val parts = resultat.split(delimiter)
+
+                    if (parts[0].last() == '1')
+                    {
+                        timer.start()
+                        window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        Toast.makeText(applicationContext, "Nettoyage en cours!", Toast.LENGTH_SHORT).show()
+                        modeNettoyage = true
+                    }
+                    else
+                    {
+                        Toast.makeText(applicationContext, "Vous avez raté votre nettoyage!", Toast.LENGTH_SHORT).show()
+                    }
+
+                    if (parts[1].last() == '1')
+                    {
+                        Toast.makeText(applicationContext, "Vous avez été détecté durant le nettoyage!", Toast.LENGTH_SHORT).show()
+                    }
+                    else
+                    {
+                        Toast.makeText(applicationContext, "Personne ne vous a détecté durant le nettoyage!", Toast.LENGTH_SHORT).show()
+                    }
+
+                    idCible = -1
+                    idMarker = ""
+                    boutonVoyage.text = "Mode Voyage"
+                    InfoWindow.closeAllInfoWindowsOn(map)
+                }
+            }
+            catch(e : Exception)
+            {
+                e.printStackTrace()
+            }
+        }.start()
+    }
+
+    private fun nettoyerEnnemi()
+    {
+        if (idCible == -1)
+        {
+            Toast.makeText(applicationContext, "Aucune cible sélectionner!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val markerId = idMarker
+        val textView : TextView = findViewById(R.id.textView)
+        var timeRemaining = 60
+        val timer = object: CountDownTimer(60000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                timeRemaining -= 1
+                textView.text = "$timeRemaining secondes restantes avant nettoyage complet de votre ennemi!"
+            }
+
+            override fun onFinish() {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                modeNettoyage = false
+                for (i in 0 until map.overlays.size) {
+                    val overlay: Overlay = map.overlays[i]
+                    if (overlay is Marker && (overlay as Marker).id == markerId) {
+                        map.overlays.remove(overlay)
+                        break
+                    }
+                }
+                getStatutJoueur()
+            }
+        }
+
+        Thread {
+            val ws = WebServiceFrappeCible()
+            val resultat = ws.call(joueur.session, joueur.signature, idCible) ?: return@Thread
+
+            try{
+                runOnUiThread {
+                    if (resultat.startsWith("KO"))
+                    {
+                        Toast.makeText(applicationContext, "Vous êtes trop loin de votre cible ou elle n'est plus ici!", Toast.LENGTH_SHORT).show()
+                        idCible = -1
+                        idMarker = ""
+                        boutonVoyage.text = "Mode Voyage"
+                        InfoWindow.closeAllInfoWindowsOn(map)
+                        return@runOnUiThread
+                    }
+
+                    if (resultat == "1")
+                    {
+                        timer.start()
+                        window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                        Toast.makeText(applicationContext, "Nettoyage de l'ennemi en cours!", Toast.LENGTH_SHORT).show()
+                        modeNettoyage = true
+                    }
+                    else
+                    {
+                        Toast.makeText(applicationContext, "Vous avez raté le nettoyage de votre ennemi!", Toast.LENGTH_SHORT).show()
+                    }
+
+
+                    idCible = -1
+                    idMarker = ""
+                    boutonVoyage.text = "Mode Voyage"
+                    InfoWindow.closeAllInfoWindowsOn(map)
+                }
+            }
+            catch(e : Exception)
+            {
+                e.printStackTrace()
+            }
+        }.start()
     }
 
     private fun saveLastPosition()
@@ -308,8 +535,8 @@ class GameActivity : AppCompatActivity() {
             val listeEnnemisXML: NodeList = nl.item(1).childNodes
 
             var i = 0
-            var cibles: ArrayList<Cible> = ArrayList()
-            var ennemis: ArrayList<Ennemi> = ArrayList()
+            cibles.clear()
+            ennemis.clear()
 
             while (i < listeCiblesXML.length)
             {
@@ -348,12 +575,12 @@ class GameActivity : AppCompatActivity() {
                 runOnUiThread {
                     for (c in cibles)
                     {
-                        addMarker(GeoPoint(c.loc),"Cible n°${c.id}","Valeur: ${c.value}", "CIBLE", "${c.id}${c.value}")
+                        addMarker(GeoPoint(c.loc),"Cible n°${c.id}","Valeur: ${c.value}", "CIBLE", "Cible: ${c.id}")
                     }
 
                     for (e in ennemis)
                     {
-                        addMarker(GeoPoint(e.loc),"Ennemi n°${e.id}","Valeur: ${e.value}, il y a ${e.lifespan}s", "ENNEMI", "${e.id}")
+                        addMarker(GeoPoint(e.loc),"Ennemi n°${e.id}","Valeur: ${e.value}, il y a ${e.lifespan}s", "ENNEMI", "Ennemi: ${e.id}")
                     }
                 }
             } catch (e: Exception) {
@@ -464,8 +691,7 @@ class GameActivity : AppCompatActivity() {
     private fun getStatutJoueur() {
         Thread {
             val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
-            val j = wsStats.call(joueur!!.session, joueur!!.signature)!!
-            joueur.statut = j.statut
+            joueur = wsStats.call(joueur!!.session, joueur!!.signature)!!
         }.start()
     }
 
@@ -481,26 +707,28 @@ class GameActivity : AppCompatActivity() {
             val nettoyeur = ws.call(joueur.session, joueur.signature, joueur.loc!!) ?: return@Thread
 
             try{
-                if (nettoyeur!!.startsWith("KO"))
-                {
-                    val textView : TextView = findViewById(R.id.textView)
+                runOnUiThread {
+                    if (nettoyeur!!.startsWith("KO"))
+                    {
+                        val textView : TextView = findViewById(R.id.textView)
 
-                    if (nettoyeur == "KO-not in 3IA")
-                        textView.text = "Vous n'êtes pas en 3IA, création du nettoyeur impossible!"
+                        if (nettoyeur == "KO-not in 3IA")
+                            textView.text = "Vous n'êtes pas en 3IA, création du nettoyeur impossible!"
+                        else
+                            textView.text = "Le délai de 15 minutes n'est pas terminé!"
+
+                        textView.setTextColor(ContextCompat.getColor(applicationContext,R.color.IndianRed))
+                    }
                     else
-                        textView.text = "Le délai de 15 minutes n'est pas terminé!"
+                    {
+                        joueur.nettoyeur = nettoyeur
+                        modeVoyage = true
+                        getStatutJoueur()
+                        boutonVoyage.text = "Remise en jeu"
 
-                    textView.setTextColor(ContextCompat.getColor(applicationContext,R.color.IndianRed))
-                }
-                else
-                {
-                    joueur.nettoyeur = nettoyeur
-                    modeVoyage = true
-                    getStatutJoueur()
-                    boutonVoyage.text = "Remise en jeu"
-
-                    Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+joueur.loc!!.longitude.toString() + " | lattitude = "+joueur.loc!!.latitude.toString())
-                    Log.d(TAG,"-----> "+joueur!!.nettoyeur)
+                        Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+joueur.loc!!.longitude.toString() + " | lattitude = "+joueur.loc!!.latitude.toString())
+                        Log.d(TAG,"-----> "+joueur!!.nettoyeur)
+                    }
                 }
             }
             catch(e : Exception)
