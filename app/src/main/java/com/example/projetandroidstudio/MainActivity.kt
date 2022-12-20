@@ -86,28 +86,13 @@ class MainActivity : AppCompatActivity() {
                     Log.d(TAG,"Connexion échouée")
                 }
                 else {
-                    //creerNettoyeur() // Création du nettoyeur
-                    //if(joueur!!.nettoyeur == null){ // S'il est toujours null c'est que le joueur n'est pas en 3IA ou que le jeu ne la pas récupérer
                     val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
                     joueur = wsStats.call(joueur!!.session, joueur!!.signature)
                     joueur!!.loc = mCurrentLocation
 
                     Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+joueur!!.loc!!.longitude.toString() + " | lattitude = "+joueur!!.loc!!.latitude.toString()
                     + " | nom = " + joueur!!.nettoyeur + " | value = " + joueur!!.value + " | statut = " + joueur!!.statut)
-                        /*if(joueur!!.nettoyeur == null){ // Erreur se diriger vers 3IA
-                            this.runOnUiThread(Runnable {
-                                AlertDialog.Builder(this)
-                                    .setMessage(R.string.creation_nettoyeur_impossible)
-                                    .setPositiveButton(
-                                        R.string.OK
-                                    ) { _, _ ->
-                                        onResume()
-                                    }
-                                    .setIcon(android.R.drawable.ic_dialog_alert)
-                                    .show()
-                            })
-                        }*/
-                    //}
+
 
                     // Si tous les tests sont passés démarrer la seconde activité contenant le jeu
                     val intent = Intent(this,GameActivity::class.java)
@@ -125,8 +110,6 @@ class MainActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
         }.start()
-
-        //Log.d(TAG,"mBouttonConnecter")
     }
 
     private fun setUpLocationListener() {
@@ -174,21 +157,4 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    /*private fun creerNettoyeur() {
-        Thread {
-            val ws = WebServiceCreationNettoyeur()
-            try{
-                Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+mCurrentLocation.longitude.toString() + " | lattitude = "+mCurrentLocation.latitude.toString())
-                //joueur!!.nettoyeur = ws.call(joueur!!.session, joueur!!.signature,longitude!!,lattitude!!)
-                joueur!!.nettoyeur = ws.call(joueur!!.session, joueur!!.signature,"1.93943","47.845560")
-                Log.d(TAG,"-----> "+joueur!!.nettoyeur)
-            }
-            catch(e : Exception)
-            {
-                e.printStackTrace()
-            }
-        }.start()
-        Log.d(TAG,"creationNettoyeur")
-    }*/
 }

@@ -10,11 +10,10 @@
     tools:context=".GameActivity">
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/texteJeu"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="a faire !!!!"
         android:textSize="24sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -40,7 +39,7 @@
         app:layout_constraintEnd_toStartOf="@+id/StatButton"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView"
+        app:layout_constraintTop_toBottomOf="@+id/texteJeu"
         app:srcCompat="@drawable/comments_solid" />
 
     <ImageButton
@@ -51,7 +50,7 @@
         app:layout_constraintEnd_toStartOf="@+id/RankingButton"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/ChatButton"
-        app:layout_constraintTop_toBottomOf="@+id/textView"
+        app:layout_constraintTop_toBottomOf="@+id/texteJeu"
         app:srcCompat="@drawable/medal_solid" />
 
     <ImageButton
@@ -63,7 +62,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/RankingButton"
-        app:layout_constraintTop_toBottomOf="@+id/textView"
+        app:layout_constraintTop_toBottomOf="@+id/texteJeu"
         app:srcCompat="@drawable/logout" />
 
     <ImageButton
@@ -75,7 +74,7 @@
         app:layout_constraintEnd_toStartOf="@+id/LogoutButton"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/StatButton"
-        app:layout_constraintTop_toBottomOf="@+id/textView"
+        app:layout_constraintTop_toBottomOf="@+id/texteJeu"
         app:srcCompat="@drawable/ranking_star_solid" />
 
     <Button
@@ -83,7 +82,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Button"
-        app:layout_constraintBottom_toTopOf="@+id/textView"
+        app:layout_constraintBottom_toTopOf="@+id/texteJeu"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
@@ -95,8 +94,7 @@
         android:layout_width="0dp"
         android:layout_height="40dp"
         android:layout_marginTop="8dp"
-        android:text="TextView"
-        android:gravity="center"
+        android:gravity="center_vertical"
         app:layout_constraintBottom_toTopOf="@+id/map"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintWidth_percent="0.7"

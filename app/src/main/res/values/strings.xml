@@ -16,4 +16,16 @@
     <string name="MainMenuLoginHint">John doe</string>
     <string name="MainMenuPasswordHint">●●●●●●●●●</string>
     <string name="MainMenuBoutonConnexion">Connection</string>
+    <string name="BoutonVoyageCreerNettoyeur">Créer nettoyeur</string>
+    <string name="TexteStatutMort">MORT</string>
+    <string name="BoutonVoyageModeVoyage">Mode Voyage</string>
+    <string name="TexteStatutEnVie">EN VIE</string>
+    <string name="TexteStatutNettoyage">NETTOYAGE</string>
+    <string name="BoutonVoyageRemise">Remise en jeu</string>
+    <string name="TexteStatutPreparation">SE PREPARE A VOYAGER</string>
+    <string name="TexteStatutVoyage">VOYAGE</string>
+    <string name="BoutonVoyageCible">Nettoyer la cible</string>
+    <string name="BoutonVoyageEnnemi">Nettoyer l\'ennemi</string>
+    <string name="TexteCreationTropLoin">Vous n\'êtes pas en 3IA, création du nettoyeur impossible!</string>
+    <string name="TexteCreationDelai">Le délai de 15 minutes n\'est pas terminé!</string>
 </resources>

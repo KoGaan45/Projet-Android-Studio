@@ -35,9 +35,9 @@ class WebServiceStatsNettoyeur {
             val messagesXML: NodeList = nodeContent.getChildNodes()
             Log.d(TAG,messagesXML.item(0).textContent.toString())
 
-            val location = Location("")
+            var location = Location("")
             location.longitude = messagesXML.item(2).textContent.toDouble()
-            location.latitude = messagesXML.item(2).textContent.toDouble()
+            location.latitude = messagesXML.item(3).textContent.toDouble()
             val name = messagesXML.item(0).textContent.toString()
             val value = messagesXML.item(1).textContent.toString()
             val etat = messagesXML.item(4).textContent.toString()

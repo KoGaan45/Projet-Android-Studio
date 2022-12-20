@@ -16,6 +16,9 @@ class WebServiceDeplace {
     private val TAG = "WSDeplace"
 
     fun call(session : Int, signature : Long, loc : Location) : NodeList? {
+        Log.d(TAG, "Longitude: ${loc.longitude}")
+        Log.d(TAG, "Latitude: ${loc.latitude}")
+
         return try {
             val url =
                 URL("http://51.68.124.144/nettoyeurs_srv/deplace.php?session=$session&signature=$signature&lon=${loc.longitude}&lat=${loc.latitude}")

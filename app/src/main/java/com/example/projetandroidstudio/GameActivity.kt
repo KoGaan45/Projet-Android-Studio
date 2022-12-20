@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Looper
+import android.provider.Settings.Global
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
@@ -55,9 +56,11 @@ class GameActivity : AppCompatActivity() {
     private lateinit var boutonVoyage: Button
     private lateinit var imageStatut: ImageView
     private lateinit var texteStatut: TextView
+    private lateinit var texteJeu: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.jeu)
 
         if (savedInstanceState == null) {
             val extras = intent.extras
@@ -86,44 +89,45 @@ class GameActivity : AppCompatActivity() {
 
         sharedPref = getPreferences(android.content.Context.MODE_PRIVATE) ?: return
 
+        boutonVoyage = findViewById(R.id.VoyageButton)
+        imageStatut = findViewById(R.id.imageStatut)
+        texteStatut = findViewById(R.id.texteStatut)
+        texteJeu = findViewById(R.id.texteJeu)
+
         mLastLocation = joueur.loc!!
         this.setUpLocationListener()
         this.checkPermissionForMap()
         this.setUpMap()
 
-        boutonVoyage = findViewById(R.id.VoyageButton)
-        imageStatut = findViewById(R.id.imageStatut)
-        texteStatut = findViewById(R.id.texteStatut)
-
-        // Check l'état du joueur à la création pour changer l'affichage du bouton
+        // Check l'état du joueur à la création pour changer l'affichage du bouton et du statut du nettoyeur
         when (joueur.statut) {
-            "DEAD" -> {
-                boutonVoyage.text = "Créer nettoyeur"
+            GlobalVar.STATUT_JOUEUR_MORT -> {
+                boutonVoyage.text = resources.getString(R.string.BoutonVoyageCreerNettoyeur)
                 imageStatut.setImageResource(R.drawable.dead_state)
-                texteStatut.text = "MORT"
+                texteStatut.text = resources.getString(R.string.TexteStatutMort)
             }
-            "UP" -> {
-                boutonVoyage.text = "Mode Voyage"
+            GlobalVar.STATUT_JOUEUR_EN_VIE -> {
+                boutonVoyage.text = resources.getString(R.string.BoutonVoyageModeVoyage)
                 imageStatut.setImageResource(R.drawable.alive_state)
-                texteStatut.text = "EN VIE"
+                texteStatut.text = resources.getString(R.string.TexteStatutEnVie)
             }
-            "NET" -> {
+            GlobalVar.STATUT_JOUEUR_NETTOYAGE -> {
                 modeNettoyage = true
-                boutonVoyage.text = "Mode Voyage"
+                boutonVoyage.text = resources.getString(R.string.BoutonVoyageModeVoyage)
                 imageStatut.setImageResource(R.drawable.cleaning_state)
-                texteStatut.text = "NETTOYAGE"
+                texteStatut.text = resources.getString(R.string.TexteStatutNettoyage)
             }
-            "PACK" -> {
+            GlobalVar.STATUT_JOUEUR_PREPARATION -> {
                 modeVoyage = true
-                boutonVoyage.text = "Remise en jeu"
+                boutonVoyage.text = resources.getString(R.string.BoutonVoyageRemise)
                 imageStatut.setImageResource(R.drawable.packing_state)
-                texteStatut.text = "SE PREPARE A VOYAGER"
+                texteStatut.text = resources.getString(R.string.TexteStatutPreparation)
             }
             else -> {
-                boutonVoyage.text = "Remise en jeu"
+                boutonVoyage.text = resources.getString(R.string.BoutonVoyageRemise)
                 modeVoyage = true
                 imageStatut.setImageResource(R.drawable.travel_state)
-                texteStatut.text = "VOYAGE"
+                texteStatut.text = resources.getString(R.string.TexteStatutVoyage)
             }
         }
 
@@ -138,9 +142,9 @@ class GameActivity : AppCompatActivity() {
             }
             else {
                 when (joueur.statut) {
-                    "DEAD" -> this.creerNettoyeur()
-                    "UP" -> this.miseEnModeVoyage()
-                    "VOY" -> this.remiseEnJeu()
+                    GlobalVar.STATUT_JOUEUR_MORT -> this.creerNettoyeur()
+                    GlobalVar.STATUT_JOUEUR_EN_VIE -> this.miseEnModeVoyage()
+                    GlobalVar.STATUT_JOUEUR_VOYAGE -> this.remiseEnJeu()
                 }
             }
         }
@@ -148,7 +152,6 @@ class GameActivity : AppCompatActivity() {
 
     private fun setUpMap() {
         getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this))
-        setContentView(R.layout.jeu)
 
         map = findViewById(R.id.map)
         map.setTileSource(TileSourceFactory.MAPNIK)
@@ -173,11 +176,10 @@ class GameActivity : AppCompatActivity() {
         val touchOverlay: Overlay = object : Overlay(this) {
             override fun onSingleTapConfirmed(e: MotionEvent, mapView: MapView): Boolean {
                 InfoWindow.closeAllInfoWindowsOn(map)
-                if (joueur.statut == "UP") boutonVoyage.text = "Mode Voyage"
+                if (joueur.statut == GlobalVar.STATUT_JOUEUR_EN_VIE) boutonVoyage.text = resources.getString(R.string.BoutonVoyageModeVoyage)
 
                 idCible = -1
                 idMarker = ""
-                Toast.makeText(applicationContext, "Vous avez déselectionner la cible!", Toast.LENGTH_SHORT)
                 return true
             }
         }
@@ -187,6 +189,7 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun addMarker(center: GeoPoint?, title : String, snippet : String, type: String, markerId: String) {
+        // Permet d'éviter les markers avec ID identiques en doublons
         for (i in 0 until map.overlays.size) {
             val overlay: Overlay = map.overlays[i]
             if (overlay is Marker && (overlay as Marker).id == markerId) {
@@ -195,6 +198,7 @@ class GameActivity : AppCompatActivity() {
             }
         }
 
+        // Met à jours les overlays
         map.invalidate()
 
         val marker = Marker(map)
@@ -204,15 +208,15 @@ class GameActivity : AppCompatActivity() {
         marker.snippet = snippet
 
         when (type) {
-            "CIBLE" -> marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.marker_cible, null)!!
-            "ME" -> marker.icon = ResourcesCompat.getDrawable(resources, org.osmdroid.library.R.drawable.person, null)!!
-            "ENNEMI" -> marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.marker_ennemi, null)!!
+            GlobalVar.TYPE_MARKER_CIBLE -> marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.marker_cible, null)!!
+            GlobalVar.TYPE_MARKER_ME -> marker.icon = ResourcesCompat.getDrawable(resources, org.osmdroid.library.R.drawable.person, null)!!
+            GlobalVar.TYPE_MARKER_ENNEMI -> marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.marker_ennemi, null)!!
         }
 
         marker.setOnMarkerClickListener { marker, mapView ->
             marker.showInfoWindow()
             //if (marker.mPanToView) mapView.controller.animateTo(marker.position)
-            if (joueur.statut == "UP")
+            if (joueur.statut == GlobalVar.STATUT_JOUEUR_EN_VIE)
             {
                 if (marker.id.startsWith("Cible:"))
                 {
@@ -222,12 +226,12 @@ class GameActivity : AppCompatActivity() {
                         {
                             idCible = c.id
                             idMarker = marker.id
-                            boutonVoyage.text = "Nettoyer cible"
+                            boutonVoyage.text = resources.getString(R.string.BoutonVoyageCible)
                             break
                         }
                     }
                 }
-                else if (marker.id.startsWith("Cible:"))
+                else if (marker.id.startsWith("Ennemi:"))
                 {
                     for (e in ennemis)
                     {
@@ -235,7 +239,7 @@ class GameActivity : AppCompatActivity() {
                         {
                             idCible = e.id
                             idMarker = marker.id
-                            boutonVoyage.text = "Nettoyer ennemi"
+                            boutonVoyage.text = getString(R.string.BoutonVoyageEnnemi)
                             break
                         }
                     }
@@ -244,7 +248,7 @@ class GameActivity : AppCompatActivity() {
                 {
                     idCible = -1
                     idMarker = ""
-                    boutonVoyage.text = "Mode Voyage"
+                    boutonVoyage.text = resources.getString(R.string.BoutonVoyageModeVoyage)
                 }
             }
 
@@ -296,6 +300,7 @@ class GameActivity : AppCompatActivity() {
                 locationRequest, object : LocationCallback() {
                     override fun onLocationResult(locationResult: LocationResult) {
                         super.onLocationResult(locationResult)
+                        // Attribue localement la nouvelle position à l'application
                         for (location in locationResult.locations) {
                             joueur.loc = location
                         }
@@ -304,15 +309,22 @@ class GameActivity : AppCompatActivity() {
                         //joueur.loc!!.latitude = 47.845095
                         //joueur.loc!!.longitude = 1.937282
 
-                        if (!modeVoyage && !modeNettoyage && joueur.statut != "DEAD")
+                        getStatutJoueur()
+
+                        if (!modeVoyage && !modeNettoyage && joueur.statut != GlobalVar.STATUT_JOUEUR_MORT)
                         {
+                            // Check la position du joueur et vérifie sa vitesse avant d'envoyer la nouvelle position du joueur au serveur
                             checkPosition()
                             calculVitesseJoueur(time)
                         }
+                        // Met à jour la denière position connue sur l'appli quand il n'y pas besoin de déplacer sur le serveur en fonction de l'état du joueur
                         else mLastLocation = joueur.loc!!
 
-                        Log.d(TAG,"Joueur session : ${joueur.session} signature : ${joueur.signature} nettoyeur : ${joueur.nettoyeur}")
+                        getStatutJoueur()
 
+                        Log.d(TAG,"Joueur session : ${joueur.session} signature : ${joueur.signature} nettoyeur : ${joueur.nettoyeur} longitude: ${joueur.loc!!.longitude} latitude: ${joueur.loc!!.latitude}")
+
+                        // Si le joueur est dans l'espace de jeu mettre à jour sa position sur l'application
                         if(modeJeu) addMarker(GeoPoint(joueur.loc), joueur.nettoyeur!!,"Votre position", "ME", "ME")
 
                         time += 5;
@@ -326,16 +338,14 @@ class GameActivity : AppCompatActivity() {
         return if((47.840 < joueur.loc!!.latitude && joueur.loc!!.latitude < 47.847) || (1.937 < joueur.loc!!.longitude && joueur.loc!!.longitude < 1.941)){
             startPoint = GeoPoint(joueur.loc!!.latitude, joueur.loc!!.longitude)
 
-            val textView : TextView = findViewById(R.id.textView)
-            textView.text = resources.getString(R.string.nettoyer_cible)
-            textView.setTextColor(ContextCompat.getColor(applicationContext,R.color.Aquamarine))
+            texteJeu.text = resources.getString(R.string.nettoyer_cible)
+            texteJeu.setTextColor(ContextCompat.getColor(applicationContext,R.color.DeepSkyBlue))
             modeJeu = true
 
             true
         } else{
-            val textView : TextView = findViewById(R.id.textView)
-            textView.text = resources.getString(R.string.erreur_position)
-            textView.setTextColor(ContextCompat.getColor(applicationContext,R.color.IndianRed))
+            texteJeu.text = resources.getString(R.string.erreur_position)
+            texteJeu.setTextColor(ContextCompat.getColor(applicationContext,R.color.IndianRed))
 
             modeJeu = false
 
@@ -352,12 +362,11 @@ class GameActivity : AppCompatActivity() {
         }
 
         val markerId = idMarker
-        val textView : TextView = findViewById(R.id.textView)
         var timeRemaining = 60
         val timer = object: CountDownTimer(60000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 timeRemaining -= 1
-                textView.text = "$timeRemaining secondes restantes avant la fin du nettoyage!"
+                texteJeu.text = "$timeRemaining secondes restantes avant la fin du nettoyage!"
             }
 
             override fun onFinish() {
@@ -385,7 +394,7 @@ class GameActivity : AppCompatActivity() {
                         Toast.makeText(applicationContext, "Vous êtes trop loin de votre cible!", Toast.LENGTH_SHORT).show()
                         idCible = -1
                         idMarker = ""
-                        boutonVoyage.text = "Mode Voyage"
+                        boutonVoyage.text = resources.getString(R.string.BoutonVoyageModeVoyage)
                         InfoWindow.closeAllInfoWindowsOn(map)
                         return@runOnUiThread
                     }
@@ -416,7 +425,7 @@ class GameActivity : AppCompatActivity() {
 
                     idCible = -1
                     idMarker = ""
-                    boutonVoyage.text = "Mode Voyage"
+                    boutonVoyage.text = resources.getString(R.string.BoutonVoyageModeVoyage)
                     InfoWindow.closeAllInfoWindowsOn(map)
                 }
             }
@@ -436,12 +445,11 @@ class GameActivity : AppCompatActivity() {
         }
 
         val markerId = idMarker
-        val textView : TextView = findViewById(R.id.textView)
         var timeRemaining = 60
         val timer = object: CountDownTimer(60000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 timeRemaining -= 1
-                textView.text = "$timeRemaining secondes restantes avant nettoyage complet de votre ennemi!"
+                texteJeu.text = "$timeRemaining secondes restantes avant nettoyage complet de votre ennemi!"
             }
 
             override fun onFinish() {
@@ -469,7 +477,7 @@ class GameActivity : AppCompatActivity() {
                         Toast.makeText(applicationContext, "Vous êtes trop loin de votre cible ou elle n'est plus ici!", Toast.LENGTH_SHORT).show()
                         idCible = -1
                         idMarker = ""
-                        boutonVoyage.text = "Mode Voyage"
+                        boutonVoyage.text = resources.getString(R.string.BoutonVoyageModeVoyage)
                         InfoWindow.closeAllInfoWindowsOn(map)
                         return@runOnUiThread
                     }
@@ -489,7 +497,7 @@ class GameActivity : AppCompatActivity() {
 
                     idCible = -1
                     idMarker = ""
-                    boutonVoyage.text = "Mode Voyage"
+                    boutonVoyage.text = resources.getString(R.string.BoutonVoyageModeVoyage)
                     InfoWindow.closeAllInfoWindowsOn(map)
                 }
             }
@@ -529,9 +537,6 @@ class GameActivity : AppCompatActivity() {
         Location.distanceBetween(mLastLocation.latitude, mLastLocation.longitude, joueur.loc!!.latitude, joueur.loc!!.longitude, results)
 
         val kmPerHour = results[0] / 5 * 3600 / 1000
-
-        Log.d(TAG,"-----> distance: " + results[0].toString())
-        Log.d(TAG, "-----> km/h: $kmPerHour")
 
         // en fonction de la vitesse du joueur on le met en mode voyage ou on le déplace
         if (kmPerHour > 15.0)
@@ -593,13 +598,15 @@ class GameActivity : AppCompatActivity() {
                 runOnUiThread {
                     for (c in cibles)
                     {
-                        addMarker(GeoPoint(c.loc),"Cible n°${c.id}","Valeur: ${c.value}", "CIBLE", "Cible: ${c.id}")
+                        addMarker(GeoPoint(c.loc),"Cible n°${c.id}","Valeur: ${c.value}", GlobalVar.TYPE_MARKER_CIBLE, "Cible: ${c.id}")
                     }
 
                     for (e in ennemis)
                     {
-                        addMarker(GeoPoint(e.loc),"Ennemi n°${e.id}","Valeur: ${e.value}, il y a ${e.lifespan}s", "ENNEMI", "Ennemi: ${e.id}")
+                        addMarker(GeoPoint(e.loc),"Ennemi n°${e.id}","Valeur: ${e.value}, il y a ${e.lifespan}s", GlobalVar.TYPE_MARKER_ENNEMI, "Ennemi: ${e.id}")
                     }
+
+                    getStatutJoueur()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -609,20 +616,16 @@ class GameActivity : AppCompatActivity() {
 
     private fun miseEnModeVoyage()
     {
-        Log.d("VOYAGE", joueur.statut!!)
-
-        if (joueur.statut != "UP") {
+        if (joueur.statut != GlobalVar.STATUT_JOUEUR_EN_VIE) {
             Toast.makeText(applicationContext, "Vous ne pouvez pas encore faire cela", Toast.LENGTH_LONG).show()
             return
         }
-
-        val textView : TextView = findViewById(R.id.textView)
 
         var timeRemaining = 60
         val timer = object: CountDownTimer(60000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 timeRemaining -= 1
-                textView.text = "$timeRemaining secondes restantes avant mode voyage!"
+                texteJeu.text = "$timeRemaining secondes restantes avant mode voyage!"
             }
 
             override fun onFinish() {
@@ -651,7 +654,7 @@ class GameActivity : AppCompatActivity() {
 
                 try {
                     runOnUiThread {
-                        if (modeVoyage) boutonVoyage.text = "Remise en jeu"
+                        if (modeVoyage) boutonVoyage.text = resources.getString(R.string.BoutonVoyageRemise)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -667,15 +670,13 @@ class GameActivity : AppCompatActivity() {
 
     private fun miseEnModeVoyageForce()
     {
-        if (joueur.statut != "UP") return
-
-        val textView : TextView = findViewById(R.id.textView)
+        if (joueur.statut != GlobalVar.STATUT_JOUEUR_EN_VIE) return
 
         var timeRemaining = 60
         val timer = object: CountDownTimer(60000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 timeRemaining -= 1
-                textView.text = "$timeRemaining secondes restantes avant mode voyage!"
+                texteJeu.text = "$timeRemaining secondes restantes avant mode voyage!"
             }
 
             override fun onFinish() {
@@ -698,7 +699,7 @@ class GameActivity : AppCompatActivity() {
 
             try {
                 runOnUiThread {
-                    if (modeVoyage) boutonVoyage.text = "Remise en jeu"
+                    if (modeVoyage) boutonVoyage.text = resources.getString(R.string.BoutonVoyageRemise)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -709,30 +710,36 @@ class GameActivity : AppCompatActivity() {
     private fun getStatutJoueur() {
         Thread {
             val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
-            joueur = wsStats.call(joueur!!.session, joueur!!.signature)!!
+            val j = wsStats.call(joueur!!.session, joueur!!.signature)!!
+
+            joueur.statut = j.statut
+            joueur.nettoyeur = j.nettoyeur
 
             try {
                 runOnUiThread {
                     when (joueur.statut) {
-                        "DEAD" -> {
+                        GlobalVar.STATUT_JOUEUR_MORT -> {
+                            texteJeu.text = "Un adversaire viens de vous nettoyer!"
+                            texteJeu.setTextColor(ContextCompat.getColor(applicationContext, R.color.IndianRed))
+                            boutonVoyage.text = resources.getString(R.string.BoutonVoyageCreerNettoyeur)
                             imageStatut.setImageResource(R.drawable.dead_state)
-                            texteStatut.text = "MORT"
+                            texteStatut.text = resources.getString(R.string.TexteStatutMort)
                         }
-                        "UP" -> {
+                        GlobalVar.STATUT_JOUEUR_EN_VIE -> {
                             imageStatut.setImageResource(R.drawable.alive_state)
-                            texteStatut.text = "EN VIE"
+                            texteStatut.text = resources.getString(R.string.TexteStatutEnVie)
                         }
-                        "NET" -> {
+                        GlobalVar.STATUT_JOUEUR_NETTOYAGE -> {
                             imageStatut.setImageResource(R.drawable.cleaning_state)
-                            texteStatut.text = "NETTOYAGE"
+                            texteStatut.text = resources.getString(R.string.TexteStatutNettoyage)
                         }
-                        "PACK" -> {
+                        GlobalVar.STATUT_JOUEUR_PREPARATION -> {
                             imageStatut.setImageResource(R.drawable.packing_state)
-                            texteStatut.text = "SE PREPARE A VOYAGER"
+                            texteStatut.text = resources.getString(R.string.TexteStatutPreparation)
                         }
                         else -> {
                             imageStatut.setImageResource(R.drawable.travel_state)
-                            texteStatut.text = "VOYAGE"
+                            texteStatut.text = resources.getString(R.string.TexteStatutVoyage)
                         }
                     }
                 }
@@ -744,7 +751,7 @@ class GameActivity : AppCompatActivity() {
     }
 
     private fun creerNettoyeur() {
-        if (joueur.statut != "DEAD")
+        if (joueur.statut != GlobalVar.STATUT_JOUEUR_MORT)
         {
             Toast.makeText(applicationContext, "Votre nettoyeur n'est pas mort", Toast.LENGTH_SHORT).show()
             return
@@ -758,24 +765,18 @@ class GameActivity : AppCompatActivity() {
                 runOnUiThread {
                     if (nettoyeur!!.startsWith("KO"))
                     {
-                        val textView : TextView = findViewById(R.id.textView)
-
                         if (nettoyeur == "KO-not in 3IA")
-                            textView.text = "Vous n'êtes pas en 3IA, création du nettoyeur impossible!"
+                            texteJeu.text = resources.getString(R.string.TexteCreationTropLoin)
                         else
-                            textView.text = "Le délai de 15 minutes n'est pas terminé!"
+                            texteJeu.text = resources.getString(R.string.TexteCreationDelai)
 
-                        textView.setTextColor(ContextCompat.getColor(applicationContext,R.color.IndianRed))
+                        texteJeu.setTextColor(ContextCompat.getColor(applicationContext,R.color.IndianRed))
                     }
                     else
                     {
                         joueur.nettoyeur = nettoyeur
                         modeVoyage = true
                         getStatutJoueur()
-                        boutonVoyage.text = "Remise en jeu"
-
-                        Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+joueur.loc!!.longitude.toString() + " | lattitude = "+joueur.loc!!.latitude.toString())
-                        Log.d(TAG,"-----> "+joueur!!.nettoyeur)
                     }
                 }
             }
@@ -784,13 +785,11 @@ class GameActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
         }.start()
-        Log.d(TAG,"creationNettoyeur")
     }
 
     private fun remiseEnJeu() {
-        Log.d("REMISE", joueur.statut!!)
 
-        if (joueur.statut != "VOY") {
+        if (joueur.statut != GlobalVar.STATUT_JOUEUR_VOYAGE) {
             Toast.makeText(applicationContext, "Vous ne pouvez pas encore faire cela", Toast.LENGTH_LONG).show()
             return
         }
@@ -800,13 +799,12 @@ class GameActivity : AppCompatActivity() {
             val enJeu = ws.call(joueur.session, joueur.signature, joueur.loc!!)
 
             try{
-                getStatutJoueur()
-
                 runOnUiThread {
                     if (enJeu)
                     {
                         modeVoyage = false
-                        boutonVoyage.text = "Mode Voyage"
+                        getStatutJoueur()
+                        boutonVoyage.text = resources.getString(R.string.BoutonVoyageModeVoyage)
                     }
                 }
             }
