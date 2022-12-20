@@ -28,4 +28,5 @@
     <string name="BoutonVoyageEnnemi">Nettoyer l\'ennemi</string>
     <string name="TexteCreationTropLoin">Vous n\'êtes pas en 3IA, création du nettoyeur impossible!</string>
     <string name="TexteCreationDelai">Le délai de 15 minutes n\'est pas terminé!</string>
+    <string name="HintChatMessage">Entrer votre message</string>
 </resources>

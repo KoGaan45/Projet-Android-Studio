@@ -45,6 +45,16 @@ class ChatActivity : AppCompatActivity() {
         this.getLastsMessage()
     }
 
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        // Save UI state changes to the savedInstanceState.
+        // This bundle will be passed to onCreate if the process is
+        // killed and restarted.
+        savedInstanceState.putSerializable("session", joueur.session)
+        savedInstanceState.putSerializable("signature", joueur.signature)
+        savedInstanceState.putSerializable("nettoyeur", joueur.nettoyeur)
+    }
+
     private fun getLastsMessage()
     {
         Thread {

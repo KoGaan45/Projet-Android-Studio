@@ -10,7 +10,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Looper
-import android.provider.Settings.Global
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
@@ -76,12 +75,16 @@ class GameActivity : AppCompatActivity() {
                 )
             }
         } else {
+            val loc = Location("")
+            loc.longitude = savedInstanceState.getSerializable("longitude") as Double
+            loc.latitude = savedInstanceState.getSerializable("latitude") as Double
+
             joueur = Joueur(
                 savedInstanceState.getSerializable("session") as Int,
                 savedInstanceState.getSerializable("signature") as Long,
                 savedInstanceState.getSerializable("nettoyeur") as String?,
                 savedInstanceState.getSerializable("value") as String?,
-                savedInstanceState.getSerializable("currentLocation") as Location,
+                loc,
                 savedInstanceState.getSerializable("statut") as String?
             )
         }
@@ -148,6 +151,20 @@ class GameActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        // Save UI state changes to the savedInstanceState.
+        // This bundle will be passed to onCreate if the process is
+        // killed and restarted.
+        savedInstanceState.putSerializable("session", joueur.session)
+        savedInstanceState.putSerializable("signature", joueur.signature)
+        savedInstanceState.putSerializable("nettoyeur", joueur.nettoyeur)
+        savedInstanceState.putSerializable("value", joueur.value)
+        savedInstanceState.putSerializable("longitude", joueur.loc!!.longitude)
+        savedInstanceState.putSerializable("latitude", joueur.loc!!.latitude)
+        savedInstanceState.putSerializable("statut", joueur.statut)
     }
 
     private fun setUpMap() {
