@@ -368,7 +368,12 @@ class GameActivity : AppCompatActivity() {
         return if((47.840 < joueur.loc!!.latitude && joueur.loc!!.latitude < 47.847) || (1.937 < joueur.loc!!.longitude && joueur.loc!!.longitude < 1.941)){
             startPoint = GeoPoint(joueur.loc!!.latitude, joueur.loc!!.longitude)
 
-            texteJeu.text = resources.getString(R.string.nettoyer_cible)
+            when (joueur.statut) {
+                GlobalVar.STATUT_JOUEUR_MORT -> texteJeu.text = resources.getString(R.string.TexteJeuReapparaitre)
+                GlobalVar.STATUT_JOUEUR_EN_VIE -> texteJeu.text = resources.getString(R.string.nettoyer_cible)
+                GlobalVar.STATUT_JOUEUR_VOYAGE -> texteJeu.text = resources.getString(R.string.TexteJeuRemiseEnJeu)
+            }
+
             texteJeu.setTextColor(ContextCompat.getColor(applicationContext,R.color.DeepSkyBlue))
             modeJeu = true
 
@@ -823,6 +828,8 @@ class GameActivity : AppCompatActivity() {
             Toast.makeText(applicationContext, "Vous ne pouvez pas encore faire cela", Toast.LENGTH_LONG).show()
             return
         }
+
+        mLastLocation = joueur.loc!!
 
         Thread {
             val ws = WebServiceRemiseEnJeu()

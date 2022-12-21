@@ -35,4 +35,6 @@
     <string name="ValeurVotreEquipeTitre">Valeur de votre equipe</string>
     <string name="ValeurEquipeAdverseTitre">Valeur de l\'équipe adverse</string>
     <string name="NombreNettoyeurTitre">Nombre de nettoyeur en jeu</string>
+    <string name="TexteJeuReapparaitre">Déplacez-vous en 3IA pour réapparaitre</string>
+    <string name="TexteJeuRemiseEnJeu">Déplacez-vous pour vous remettre en jeu</string>
 </resources>
