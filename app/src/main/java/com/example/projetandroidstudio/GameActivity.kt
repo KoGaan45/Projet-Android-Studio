@@ -893,9 +893,19 @@ class GameActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
+    fun goToStatPerso(view: View)
+    {
+        val intent = Intent(this, StatPersoActivity::class.java)
+        intent.putExtra("session", joueur!!.session)
+        intent.putExtra("signature", joueur!!.signature)
+        startActivity(intent)
+    }
+
     fun goToStats(view: View)
     {
-        //val intent = Intent(this, StatsEquipes::class.java)
-        //startActivity(intent)
+        val intent = Intent(this, StatEquipesActivity::class.java)
+        intent.putExtra("session", joueur!!.session)
+        intent.putExtra("signature", joueur!!.signature)
+        startActivity(intent)
     }
 }
