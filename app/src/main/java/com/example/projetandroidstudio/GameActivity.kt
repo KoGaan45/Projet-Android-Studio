@@ -42,7 +42,9 @@ class GameActivity : AppCompatActivity() {
     private lateinit var map : MapView
     private lateinit var mLastLocation: Location
     private lateinit var sharedPref: SharedPreferences
-    private var fusedLocationProviderClient : FusedLocationProviderClient? = null
+    private lateinit var mFusedLocationProviderClient : FusedLocationProviderClient
+    private lateinit var mLocationCallback: LocationCallback
+    private lateinit var mLocationRequest: LocationRequest
     private var startPoint : GeoPoint = GeoPoint(47.845464, 1.939825)
     private var modeJeu : Boolean = true
     private var modeVoyage : Boolean = false
@@ -98,7 +100,8 @@ class GameActivity : AppCompatActivity() {
         texteJeu = findViewById(R.id.texteJeu)
 
         mLastLocation = joueur.loc!!
-        this.setUpLocationListener()
+        this.setUpLocationCallback()
+        this.requestLocationUpdates()
         this.checkPermissionForMap()
         this.setUpMap()
 
@@ -298,13 +301,55 @@ class GameActivity : AppCompatActivity() {
         }
     }
 
-    private fun setUpLocationListener() {
+    private fun setUpLocationCallback()
+    {
         var time = 0;
 
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        mLocationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                super.onLocationResult(locationResult)
+                // Attribue localement la nouvelle position à l'application
+                for (location in locationResult.locations) {
+                    joueur.loc = location
+                }
+
+                getStatutJoueur()
+
+                if (!modeVoyage && !modeNettoyage && joueur.statut != GlobalVar.STATUT_JOUEUR_MORT) {
+                    // Check la position du joueur et vérifie sa vitesse avant d'envoyer la nouvelle position du joueur au serveur
+                    checkPosition()
+                    calculVitesseJoueur(time)
+                }
+                // Met à jour la denière position connue sur l'appli quand il n'y pas besoin de déplacer sur le serveur en fonction de l'état du joueur
+                else mLastLocation = joueur.loc!!
+
+                getStatutJoueur()
+
+                Log.d(
+                    TAG,
+                    "Joueur session : ${joueur.session} signature : ${joueur.signature} nettoyeur : ${joueur.nettoyeur} longitude: ${joueur.loc!!.longitude} latitude: ${joueur.loc!!.latitude}"
+                )
+
+                // Si le joueur est dans l'espace de jeu mettre à jour sa position sur l'application
+                if (modeJeu) addMarker(
+                    GeoPoint(joueur.loc),
+                    joueur.nettoyeur!!,
+                    "Votre position",
+                    "ME",
+                    "ME"
+                )
+
+                time += 5;
+            }
+        }
+    }
+
+    private fun requestLocationUpdates()
+    {
         val builder = LocationRequest.Builder(5000)
         builder.setPriority(Priority.PRIORITY_HIGH_ACCURACY)
-        val locationRequest = builder.build()
+        mLocationRequest = builder.build()
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -313,40 +358,8 @@ class GameActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            fusedLocationProviderClient!!.requestLocationUpdates(
-                locationRequest, object : LocationCallback() {
-                    override fun onLocationResult(locationResult: LocationResult) {
-                        super.onLocationResult(locationResult)
-                        // Attribue localement la nouvelle position à l'application
-                        for (location in locationResult.locations) {
-                            joueur.loc = location
-                        }
-
-                        // A ENLEVER
-                        //joueur.loc!!.latitude = 47.845095
-                        //joueur.loc!!.longitude = 1.937282
-
-                        getStatutJoueur()
-
-                        if (!modeVoyage && !modeNettoyage && joueur.statut != GlobalVar.STATUT_JOUEUR_MORT)
-                        {
-                            // Check la position du joueur et vérifie sa vitesse avant d'envoyer la nouvelle position du joueur au serveur
-                            checkPosition()
-                            calculVitesseJoueur(time)
-                        }
-                        // Met à jour la denière position connue sur l'appli quand il n'y pas besoin de déplacer sur le serveur en fonction de l'état du joueur
-                        else mLastLocation = joueur.loc!!
-
-                        getStatutJoueur()
-
-                        Log.d(TAG,"Joueur session : ${joueur.session} signature : ${joueur.signature} nettoyeur : ${joueur.nettoyeur} longitude: ${joueur.loc!!.longitude} latitude: ${joueur.loc!!.latitude}")
-
-                        // Si le joueur est dans l'espace de jeu mettre à jour sa position sur l'application
-                        if(modeJeu) addMarker(GeoPoint(joueur.loc), joueur.nettoyeur!!,"Votre position", "ME", "ME")
-
-                        time += 5;
-                    }
-                }, Looper.myLooper()
+            mFusedLocationProviderClient.requestLocationUpdates(
+                mLocationRequest, mLocationCallback, Looper.myLooper()
             )
         }
     }
@@ -535,7 +548,7 @@ class GameActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            fusedLocationProviderClient!!.lastLocation.addOnSuccessListener {
+            mFusedLocationProviderClient.lastLocation.addOnSuccessListener {
                 joueur.loc = it
             }
         }
@@ -834,6 +847,9 @@ class GameActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (mFusedLocationProviderClient != null) {
+            requestLocationUpdates()
+        }
         mLastLocation.longitude = sharedPref.getString("last_longitude", "0.0")!!.toDouble()
         mLastLocation.latitude = sharedPref.getString("last_latitude", "0.0")!!.toDouble()
         map.onResume() //needed for compass, my location overlays, v6.0.0 and up
@@ -841,6 +857,9 @@ class GameActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        if (mFusedLocationProviderClient != null) {
+            mFusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
+        }
         saveLastPosition()
         map.onPause()
     }

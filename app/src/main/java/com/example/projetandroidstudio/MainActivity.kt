@@ -21,7 +21,9 @@ import com.google.android.gms.location.*
 class MainActivity : AppCompatActivity() {
 
     private val TAG = "MainActivity"
-    private var fusedLocationProviderClient : FusedLocationProviderClient? = null
+    private lateinit var mFusedLocationProviderClient : FusedLocationProviderClient
+    private lateinit var mLocationRequest : LocationRequest
+    private lateinit var mLocationCallback : LocationCallback
     private var joueur : Joueur? = null
     lateinit var mCurrentLocation: Location
 
@@ -47,15 +49,31 @@ class MainActivity : AppCompatActivity() {
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
         }
 
-        this.setUpLocationListener()
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        mLocationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                super.onLocationResult(locationResult)
+                for (location in locationResult.locations) {
+                    mCurrentLocation = location
+                }
+            }
+        }
+
+        this.requestLocationUpdates()
     }
 
     override fun onResume() {
         super.onResume()
+        if (mFusedLocationProviderClient != null) {
+            requestLocationUpdates()
+        }
     }
 
     override fun onPause() {
         super.onPause()
+        if (mFusedLocationProviderClient != null) {
+            mFusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
+        }
     }
 
     override fun onDestroy() {
@@ -112,11 +130,11 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun setUpLocationListener() {
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+    private fun requestLocationUpdates() {
         val builder = LocationRequest.Builder(5000)
         builder.setPriority(Priority.PRIORITY_HIGH_ACCURACY)
-        val locationRequest = builder.build()
+        mLocationRequest = builder.build()
+
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -125,16 +143,8 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            fusedLocationProviderClient!!.requestLocationUpdates(
-                locationRequest, object : LocationCallback() {
-                    override fun onLocationResult(locationResult: LocationResult) {
-                        super.onLocationResult(locationResult)
-                        for (location in locationResult.locations) {
-                            mCurrentLocation = location
-                            //Log.d(TAG, mCurrentLocation.longitude.toString())
-                        }
-                    }
-                }, Looper.myLooper()
+            mFusedLocationProviderClient.requestLocationUpdates(
+                mLocationRequest, mLocationCallback, Looper.myLooper()
             )
         }
     }
