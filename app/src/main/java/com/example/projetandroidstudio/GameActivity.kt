@@ -315,10 +315,10 @@ class GameActivity : AppCompatActivity() {
                 }
 
                 getStatutJoueur()
+                checkPosition()
 
                 if (!modeVoyage && !modeNettoyage && joueur.statut != GlobalVar.STATUT_JOUEUR_MORT) {
                     // Check la position du joueur et vérifie sa vitesse avant d'envoyer la nouvelle position du joueur au serveur
-                    checkPosition()
                     calculVitesseJoueur(time)
                 }
                 // Met à jour la denière position connue sur l'appli quand il n'y pas besoin de déplacer sur le serveur en fonction de l'état du joueur
