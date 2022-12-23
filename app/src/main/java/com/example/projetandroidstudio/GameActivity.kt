@@ -328,7 +328,7 @@ class GameActivity : AppCompatActivity() {
 
                 Log.d(
                     TAG,
-                    "Joueur session : ${joueur.session} signature : ${joueur.signature} nettoyeur : ${joueur.nettoyeur} longitude: ${joueur.loc!!.longitude} latitude: ${joueur.loc!!.latitude}"
+                    "Joueur session : ${joueur.session} signature : ${joueur.signature} nettoyeur : ${joueur.nettoyeur} status : ${joueur.statut} longitude: ${joueur.loc!!.longitude} latitude: ${joueur.loc!!.latitude}"
                 )
 
                 // Si le joueur est dans l'espace de jeu mettre à jour sa position sur l'application
@@ -439,6 +439,7 @@ class GameActivity : AppCompatActivity() {
 
                     if (parts[0].last() == '1')
                     {
+                        getStatutJoueur()
                         timer.start()
                         window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         Toast.makeText(applicationContext, "Nettoyage en cours!", Toast.LENGTH_SHORT).show()
@@ -455,7 +456,7 @@ class GameActivity : AppCompatActivity() {
                     }
                     else
                     {
-                        Toast.makeText(applicationContext, "Personne ne vous a détecté durant le nettoyage!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(applicationContext, "Personne ne vous a détecté durant votre tentative!", Toast.LENGTH_SHORT).show()
                     }
 
                     idCible = -1
@@ -519,6 +520,7 @@ class GameActivity : AppCompatActivity() {
 
                     if (resultat == "1")
                     {
+                        getStatutJoueur()
                         timer.start()
                         window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         Toast.makeText(applicationContext, "Nettoyage de l'ennemi en cours!", Toast.LENGTH_SHORT).show()
@@ -528,7 +530,6 @@ class GameActivity : AppCompatActivity() {
                     {
                         Toast.makeText(applicationContext, "Vous avez raté le nettoyage de votre ennemi!", Toast.LENGTH_SHORT).show()
                     }
-
 
                     idCible = -1
                     idMarker = ""
