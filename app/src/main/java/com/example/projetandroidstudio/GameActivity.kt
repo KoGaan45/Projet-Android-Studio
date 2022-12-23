@@ -502,7 +502,7 @@ class GameActivity : AppCompatActivity() {
         }
 
         Thread {
-            val ws = WebServiceFrappeCible()
+            val ws = WebServiceFrappeNettoyeur()
             val resultat = ws.call(joueur.session, joueur.signature, idCible) ?: return@Thread
 
             try{

@@ -15,7 +15,7 @@ class WebServiceFrappeNettoyeur {
 
     fun call(session : Int, signature : Long, cibleId: Int) : String? {
         return try {
-            val url = URL("http://51.68.124.144/nettoyeurs_srv/frappe_net.php?session=$session&signature=$signature&cible_id=$cibleId")
+            val url = URL("http://51.68.124.144/nettoyeurs_srv/frappe_net.php?session=$session&signature=$signature&net_id=$cibleId")
 
             val cnx: URLConnection = url.openConnection()
             val `in`: InputStream = cnx.getInputStream()
