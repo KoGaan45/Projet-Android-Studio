@@ -2,6 +2,8 @@ package com.example.projetandroidstudio
 
 import android.content.ContentValues
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.EditText
@@ -9,6 +11,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.concurrent.timerTask
 
 
 class ChatActivity : AppCompatActivity() {
@@ -17,6 +22,13 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var recyclerView : RecyclerView
     private lateinit var editText: EditText
     private lateinit var joueur : Joueur
+    private lateinit var mainHandler: Handler
+    private val updateChat = object : Runnable {
+        override fun run() {
+            getLastsMessage()
+            mainHandler.postDelayed(this, 10000)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +49,8 @@ class ChatActivity : AppCompatActivity() {
             )
         }
 
+        mainHandler = Handler(Looper.getMainLooper())
+
         editText = findViewById<EditText>(R.id.MessageToSend)
 
         recyclerView = findViewById<RecyclerView>(R.id.ChatRecyclerView)
@@ -53,6 +67,16 @@ class ChatActivity : AppCompatActivity() {
         savedInstanceState.putSerializable("session", joueur.session)
         savedInstanceState.putSerializable("signature", joueur.signature)
         savedInstanceState.putSerializable("nettoyeur", joueur.nettoyeur)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mainHandler.removeCallbacks(updateChat)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        mainHandler.post(updateChat)
     }
 
     private fun getLastsMessage()
