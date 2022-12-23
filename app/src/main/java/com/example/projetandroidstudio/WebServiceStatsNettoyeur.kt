@@ -1,6 +1,7 @@
 package com.example.projetandroidstudio
 
 import android.location.Location
+import android.provider.Settings.Global
 import android.util.Log
 import org.w3c.dom.Document
 import org.w3c.dom.Node
@@ -35,12 +36,20 @@ class WebServiceStatsNettoyeur {
             val messagesXML: NodeList = nodeContent.getChildNodes()
             Log.d(TAG,messagesXML.item(0).textContent.toString())
 
+            val nbNodes = messagesXML.length
+
+            if(nbNodes == 1){
+                // Le nettoyeur est mort
+                return Joueur(session, signature, GlobalVar.STATUT_JOUEUR_MORT , null, null, GlobalVar.STATUT_JOUEUR_MORT)
+            }
+
+            val etat = messagesXML.item(4).textContent.toString()
+
             var location = Location("")
             location.longitude = messagesXML.item(2).textContent.toDouble()
             location.latitude = messagesXML.item(3).textContent.toDouble()
             val name = messagesXML.item(0).textContent.toString()
             val value = messagesXML.item(1).textContent.toString()
-            val etat = messagesXML.item(4).textContent.toString()
 
             return Joueur(session, signature, name, value, location, etat)
         } catch (e: Exception) {
