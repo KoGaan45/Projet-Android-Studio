@@ -81,6 +81,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/boutton_connecter"
-        app:srcCompat="@drawable/logo_nettroyage" />
+        app:srcCompat="@drawable/logo_nettoyage" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
