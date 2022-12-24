@@ -104,13 +104,13 @@ class MainActivity : AppCompatActivity() {
                     Log.d(TAG,"Connexion échouée")
                 }
                 else {
+
                     val wsStats = WebServiceStatsNettoyeur() // Tentative de récupération
                     joueur = wsStats.call(joueur!!.session, joueur!!.signature)
                     joueur!!.loc = mCurrentLocation
 
                     Log.d(TAG,"Session = "+joueur!!.session + " | Signature = "+joueur!!.signature + " | longitude = "+joueur!!.loc!!.longitude.toString() + " | lattitude = "+joueur!!.loc!!.latitude.toString()
                     + " | nom = " + joueur!!.nettoyeur + " | value = " + joueur!!.value + " | statut = " + joueur!!.statut)
-
 
                     // Si tous les tests sont passés démarrer la seconde activité contenant le jeu
                     val intent = Intent(this,GameActivity::class.java)
