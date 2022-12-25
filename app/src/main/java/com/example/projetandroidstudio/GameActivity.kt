@@ -5,6 +5,7 @@ import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
@@ -323,8 +324,6 @@ class GameActivity : AppCompatActivity() {
                 }
                 // Met à jour la denière position connue sur l'appli quand il n'y pas besoin de déplacer sur le serveur en fonction de l'état du joueur
                 else mLastLocation = joueur.loc!!
-
-                getStatutJoueur()
 
                 Log.d(
                     TAG,
@@ -755,8 +754,8 @@ class GameActivity : AppCompatActivity() {
                 runOnUiThread {
                     when (joueur.statut) {
                         GlobalVar.STATUT_JOUEUR_MORT -> {
-                            texteJeu.text = "Un adversaire viens de vous nettoyer!"
-                            texteJeu.setTextColor(ContextCompat.getColor(applicationContext, R.color.IndianRed))
+                            //texteJeu.text = "Un adversaire viens de vous nettoyer!"
+                            //texteJeu.setTextColor(ContextCompat.getColor(applicationContext, R.color.IndianRed))
                             boutonVoyage.text = resources.getString(R.string.BoutonVoyageCreerNettoyeur)
                             imageStatut.setImageResource(R.drawable.dead_state)
                             texteStatut.text = resources.getString(R.string.TexteStatutMort)
@@ -812,6 +811,7 @@ class GameActivity : AppCompatActivity() {
                     {
                         joueur.nettoyeur = nettoyeur
                         modeVoyage = true
+                        boutonVoyage.text = resources.getString(R.string.BoutonVoyageRemise)
                         getStatutJoueur()
                     }
                 }
@@ -840,6 +840,7 @@ class GameActivity : AppCompatActivity() {
                 runOnUiThread {
                     if (enJeu)
                     {
+                        InfoWindow.closeAllInfoWindowsOn(map)
                         modeVoyage = false
                         getStatutJoueur()
                         boutonVoyage.text = resources.getString(R.string.BoutonVoyageModeVoyage)

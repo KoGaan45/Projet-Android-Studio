@@ -1,5 +1,6 @@
 package com.example.projetandroidstudio
 
+import android.R.attr.data
 import android.content.ContentValues
 import android.os.Bundle
 import android.os.Handler
@@ -12,12 +13,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.concurrent.timerTask
 
 
 class ChatActivity : AppCompatActivity() {
 
+    private lateinit var adapter: MessagesRecyclerViewAdapter
     private var listeMessages = ListeMessages()
     private lateinit var recyclerView : RecyclerView
     private lateinit var editText: EditText
@@ -54,8 +54,10 @@ class ChatActivity : AppCompatActivity() {
         editText = findViewById<EditText>(R.id.MessageToSend)
 
         recyclerView = findViewById<RecyclerView>(R.id.ChatRecyclerView)
-
         recyclerView.layoutManager = LinearLayoutManager(this)
+        adapter = MessagesRecyclerViewAdapter(this, listeMessages)
+        recyclerView.adapter = adapter
+
         this.getLastsMessage()
     }
 
@@ -88,14 +90,13 @@ class ChatActivity : AppCompatActivity() {
             try {
                 runOnUiThread {
                     for (m in aAjouter!!) {
-                        if(m !in listeMessages.mMessages) listeMessages.ajouteMessage(m!!.id, m!!.date, m!!.auteur, m!!.contenu)
+                        if(m !in listeMessages.mMessages) {
+                            listeMessages.ajouteMessage(m!!.id, m!!.date, m!!.auteur, m!!.contenu)
+                            adapter.notifyItemInserted(listeMessages.size() - 1);
+                        }
                     }
 
-                    listeMessages.mMessages.sortBy { it.id }
-
-                    Log.d("LISTES DES MESSAGES", listeMessages.mMessages.toString())
-
-                    recyclerView.adapter = MessagesRecyclerViewAdapter(listeMessages)
+                    //listeMessages.mMessages.sortBy { it.id }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

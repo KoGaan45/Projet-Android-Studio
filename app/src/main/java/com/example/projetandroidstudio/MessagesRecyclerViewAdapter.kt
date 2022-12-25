@@ -1,5 +1,7 @@
 package com.example.projetandroidstudio
 
+import android.R.attr.data
+import android.content.Context
 import android.text.Html
 import android.view.LayoutInflater
 import android.view.View
@@ -9,7 +11,8 @@ import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MessagesRecyclerViewAdapter(var mValues: ListeMessages?) : RecyclerView.Adapter<MessagesRecyclerViewAdapter.ViewHolder>() {
+
+class MessagesRecyclerViewAdapter(val context: Context, var mValues: ListeMessages?) : RecyclerView.Adapter<MessagesRecyclerViewAdapter.ViewHolder>() {
 
     class ViewHolder(val mView: View) : RecyclerView.ViewHolder(
         mView
@@ -46,10 +49,5 @@ class MessagesRecyclerViewAdapter(var mValues: ListeMessages?) : RecyclerView.Ad
 
     override fun getItemCount(): Int {
         return mValues!!.size()
-    }
-
-    fun ajouteMessage(id: Int, date: Date?, author: String?, contenu: String?) {
-        mValues!!.ajouteMessage(id, date, author, contenu)
-        this.notifyItemInserted(mValues!!.size() - 1)
     }
 }
